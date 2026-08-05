@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="스마트대국">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>스마트 대국 — 로그인</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Malgun Gothic',sans-serif;
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+}
+.wrap{width:380px;max-width:100%;padding:0 16px}
+.logo{text-align:center;margin-bottom:32px}
+.logo h1{font-size:40px;color:#f5e6c8;letter-spacing:10px;text-shadow:0 2px 20px rgba(212,160,86,.4)}
+.logo p{color:#d4a056;font-size:13px;letter-spacing:3px;margin-top:6px}
+.card{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px; padding:32px 36px;
+}
+.tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:24px}
+.tab{
+  flex:1;padding:10px;text-align:center;cursor:pointer;
+  color:#7a8a9a;font-size:14px;border-bottom:2px solid transparent;
+  transition:all .2s;
+}
+.tab.active{color:#d4a056;border-bottom-color:#d4a056}
+.panel{display:none}
+.panel.active{display:block}
+label{display:block;font-size:12px;color:#7a8a9a;margin-bottom:5px;margin-top:14px}
+input,select{
+  width:100%;background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;padding:10px 14px;
+  color:#e0e0e0;font-size:14px;font-family:inherit;
+  outline:none;transition:border-color .2s;
+}
+input:focus,select:focus{border-color:rgba(212,160,86,.5)}
+input::placeholder{color:#4a5a6a}
+.btn{
+  width:100%;margin-top:22px;padding:12px;
+  border:none;border-radius:8px;cursor:pointer;
+  font-size:15px;font-weight:700;font-family:inherit;
+  transition:all .2s;
+}
+.btn-gold{background:linear-gradient(135deg,#d4a056,#b8860b);color:#1a1a2e}
+.btn-gold:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-gray{background:rgba(149,165,166,.2);border:1px solid rgba(149,165,166,.3);color:#95a5a6}
+.btn-gray:hover{background:rgba(149,165,166,.3)}
+.btn-blue{background:linear-gradient(135deg,#3498db,#1a5276);color:#fff}
+.btn-blue:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.divider{
+  display:flex;align-items:center;gap:12px;
+  margin:18px 0;color:#4a5a6a;font-size:12px;
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+.msg{
+  margin-top:14px;padding:10px 14px;border-radius:8px;
+  font-size:13px;text-align:center;display:none;
+}
+.msg.err{background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);color:#e74c3c}
+.msg.ok{background:rgba(39,174,96,.15);border:1px solid rgba(39,174,96,.3);color:#27ae60}
+.hint{
+  margin-top:10px;font-size:11px;color:#5a6a7a;
+  background:rgba(0,0,0,.2);border-radius:6px;padding:10px 12px;line-height:1.7;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <h1>바 둑</h1>
+    <p>스마트 대국</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('login')">로그인</div>
+      <div class="tab" onclick="showTab('register')">회원가입</div>
+      <div class="tab" onclick="showTab('guest')">게스트</div>
+    </div>
+
+    <!-- 로그인 -->
+    <div class="panel active" id="panel-login">
+      <label>이메일</label>
+      <input type="email" id="login-email" placeholder="user@example.com" autocomplete="email">
+      <label>비밀번호</label>
+      <input type="password" id="login-pw" placeholder="비밀번호">
+      <button class="btn btn-gold" onclick="doLogin()">로그인</button>
+      <div class="msg" id="login-msg"></div>
+    </div>
+
+    <!-- 회원가입 -->
+    <div class="panel" id="panel-register">
+      <label>닉네임 <span style="color:#e74c3c">*</span></label>
+      <input type="text" id="reg-nick" placeholder="2자 이상 (예: 바둑고수)" maxlength="15">
+      <label>이메일 <span style="color:#e74c3c">*</span></label>
+      <input type="email" id="reg-email" placeholder="user@example.com">
+      <label>비밀번호 <span style="color:#e74c3c">*</span></label>
+      <input type="password" id="reg-pw" placeholder="6자 이상">
+      <label>현재 급수 (선택)</label>
+      <select id="reg-rank">
+        <option value="?급">모름</option>
+        <option value="30급">30급 (입문)</option>
+        <option value="20급">20급</option>
+        <option value="15급">15급</option>
+        <option value="10급">10급</option>
+        <option value="5급">5급</option>
+        <option value="1급">1급</option>
+        <option value="1단">1단</option>
+        <option value="3단">3단</option>
+        <option value="5단">5단</option>
+        <option value="9단">9단</option>
+      </select>
+      <button class="btn btn-blue" onclick="doRegister()">회원가입</button>
+      <div class="msg" id="reg-msg"></div>
+    </div>
+
+    <!-- 게스트 -->
+    <div class="panel" id="panel-guest">
+      <label>닉네임</label>
+      <input type="text" id="guest-nick" placeholder="사용할 닉네임 (2자 이상)" maxlength="15">
+      <button class="btn btn-gray" onclick="doGuest()">게스트로 입장</button>
+      <div class="hint">
+        ℹ 게스트는 대국에 참여할 수 있습니다<br>
+        ✗ 대국 전적이 저장되지 않습니다<br>
+        ✗ 마이페이지를 사용할 수 없습니다
+      </div>
+      <div class="msg" id="guest-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 파일로 직접 열어도 동작하도록 서버 주소 자동 감지
+// file:// → http://localhost:3100 사용 / http:// → 상대경로 사용
+const SERVER = location.protocol === 'file:' ? 'http://localhost:3100' : '';
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['login','register','guest'][i]===name));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',['login','register','guest'][i]===name));
+}
+
+function showMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + type;
+  el.style.display = 'block';
+}
+
+async function apiPost(path, body) {
+  const res = await fetch(SERVER + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    credentials: 'include',   // 쿠키 전달 (cross-origin일 때 필수)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function goLobby() {
+  // 파일로 열었으면 서버 주소로, HTTP면 루트로
+  location.href = SERVER + '/';
+}
+
+async function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-pw').value;
+  if (!email || !password) return showMsg('login-msg','이메일과 비밀번호를 입력하세요','err');
+  try {
+    const r = await apiPost('/auth/login', { email, password });
+    if (r.ok) goLobby();
+    else showMsg('login-msg', r.msg || '로그인 실패', 'err');
+  } catch (e) {
+    showMsg('login-msg', '서버 연결 오류: ' + e.message, 'err');
+  }
+}
+
+async function doRegister() {
+  const nick     = document.getElementById('reg-nick').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-pw').value;
+  const rank     = document.getElementById('reg-rank').value;
+  if (!nick || !email || !password) return showMsg('reg-msg','필수 항목을 입력하세요','err');
+  if (password.length < 6) return showMsg('reg-msg','비밀번호는 6자 이상이어야 합니다','err');
+  try {
+    const r = await apiPost('/auth/register', { nick, email, password, rank });
+    if (r.ok) { showMsg('reg-msg','가입 완료! 로비로 이동합니다…','ok'); setTimeout(goLobby, 1000); }
+    else showMsg('reg-msg', r.msg || '가입 실패', 'err');
+  } catch (e) {
+    showMsg('reg-msg', '서버 연결 오류: ' + e.message, 'err');
+  }
+}
+
+async function doGuest() {
+  const nick = document.getElementById('guest-nick').value.trim();
+  if (!nick) return showMsg('guest-msg','닉네임을 입력하세요','err');
+  try {
+    const r = await apiPost('/auth/guest', { nick });
+    if (r.ok) goLobby();
+    else showMsg('guest-msg', r.msg || '입장 실패', 'err');
+  } catch (e) {
+    showMsg('guest-msg', '서버 연결 오류: ' + e.message, 'err');
+  }
+}
+
+// 엔터 키
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('panel-login').classList.contains('active')) doLogin();
+  else if (document.getElementById('panel-register').classList.contains('active')) doRegister();
+  else doGuest();
+});
+</script>
+</body>
+</html>

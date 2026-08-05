@@ -1,0 +1,7 @@
+node_modules
+_versions
+sgf_records
+baduk.db
+.env
+*.bat
+계획서*.html

@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="스마트대국">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>스마트 대국</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;touch-action:manipulation}
+body{
+  font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+  color:#e0e0e0;display:flex;flex-direction:column;
+}
+
+/* ── 헤더 ─────────────────────────────────────────── */
+.hdr{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 14px;flex-shrink:0;
+  background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.07);
+  min-height:46px;
+}
+.hdr .title{font-size:14px;color:#f5e6c8;font-weight:700;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.role-badge{
+  padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700;flex-shrink:0;
+}
+.role-badge.black{background:rgba(0,0,0,.6);color:#f5e6c8;border:1px solid rgba(255,255,255,.2)}
+.role-badge.white{background:rgba(240,240,240,.15);color:#fff;border:1px solid rgba(255,255,255,.4)}
+.role-badge.spectator{background:rgba(52,152,219,.2);color:#3498db;border:1px solid rgba(52,152,219,.3)}
+.hdr-btn{
+  padding:5px 12px;border:none;border-radius:6px;cursor:pointer;
+  font-size:12px;font-family:inherit;font-weight:600;
+  background:rgba(255,255,255,.1);color:#c8d0d8;flex-shrink:0;
+}
+
+/* ── 플레이어 스트립 (모바일 전용 — 데스크탑 기본 hidden) ── */
+.player-strip{
+  display:none;                        /* 기본: 숨김 */
+  align-items:stretch;flex-shrink:0;
+  background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.06);
+  min-height:70px;
+}
+.ps-card{
+  flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;
+  position:relative;transition:background .2s;
+}
+.ps-card.active{background:rgba(212,160,86,.1)}
+.ps-card.right{flex-direction:row-reverse;text-align:right}
+.ps-stone{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+}
+.ps-stone.black{background:radial-gradient(circle at 34% 30%,#6f6f6f,#0a0a0a 72%)}
+.ps-stone.white{background:radial-gradient(circle at 34% 30%,#fff,#d0d0d0 78%);border:1px solid #999}
+.ps-info{flex:1;min-width:0}
+.ps-nick{font-size:13px;font-weight:700;color:#f5e6c8;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-rank{font-size:10px;color:#d4a056}
+.ps-timer{
+  font-size:20px;font-weight:700;font-family:'Consolas',monospace;
+  color:#f5e6c8;
+}
+.ps-timer.low{color:#e74c3c;animation:blink .8s step-end infinite}
+@keyframes blink{50%{opacity:.3}}
+.ps-cap{font-size:10px;color:#7a8a9a}
+.ps-divider{
+  width:1px;background:rgba(255,255,255,.07);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;padding:8px 4px;
+  color:#6a7a8a;font-size:11px;font-weight:700;writing-mode:horizontal-tb;
+}
+
+/* ── 메인 영역 ────────────────────────────────────── */
+.main{
+  flex:1;display:flex;overflow:hidden;position:relative;
+}
+
+/* ── 바둑판 영역 ──────────────────────────────────── */
+.board-area{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:10px 10px 64px;overflow:hidden;position:relative;
+}
+.board-wrap{
+  background:linear-gradient(90deg,#5d4329 0%,#8b6b4a 3%,#6b5032 6%,#5d4329 100%);
+  padding:14px;border-radius:8px;
+  box-shadow:0 10px 30px rgba(0,0,0,.6);
+}
+.board-inner{
+  background:
+    repeating-linear-gradient(90deg,transparent 0,rgba(139,107,74,.03) 1px,transparent 2px,transparent 20px),
+    repeating-linear-gradient(0deg,transparent 0,rgba(139,107,74,.02) 1px,transparent 2px,transparent 40px),
+    linear-gradient(180deg,#e8c87a 0%,#d4b56a 25%,#c9a85e 50%,#d4b56a 75%,#e8c87a 100%);
+  padding:10px;border-radius:4px;
+  box-shadow:inset 0 0 16px rgba(139,107,74,.3);
+}
+#board{display:grid;position:relative}
+.cell{position:relative;cursor:pointer;touch-action:none}
+.cell::before,.cell::after{content:'';position:absolute;background:#5c4a32;z-index:1}
+.cell::after{height:1.2px;top:50%;transform:translateY(-50%);left:0;right:0}
+.cell::before{width:1.2px;left:50%;transform:translateX(-50%);top:0;bottom:0}
+.cell.edge-top::before{top:50%}.cell.edge-bottom::before{bottom:50%}
+.cell.edge-left::after{left:50%}.cell.edge-right::after{right:50%}
+.star-point{
+  position:absolute;width:8px;height:8px;
+  background:radial-gradient(circle,#4a3d2e,#3d3226);border-radius:50%;
+  top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;
+}
+.stone{
+  position:absolute;border-radius:50%;
+  top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;
+}
+.stone.black{
+  background:radial-gradient(ellipse 50% 40% at 35% 25%,rgba(100,100,100,.6) 0%,transparent 50%),
+             radial-gradient(ellipse at 50% 50%,#3a3a3a 0%,#1a1a1a 50%,#0a0a0a 100%);
+  box-shadow:3px 3px 6px rgba(0,0,0,.7),inset 3px 3px 6px rgba(255,255,255,.08);
+}
+.stone.white{
+  background:radial-gradient(ellipse 60% 50% at 30% 20%,rgba(255,255,255,.95) 0%,transparent 50%),
+             radial-gradient(ellipse at 50% 50%,#fafafa 0%,#eeeeee 40%,#d5d5d5 80%,#c0c0c0 100%);
+  box-shadow:3px 3px 6px rgba(0,0,0,.4),inset 2px 2px 4px rgba(255,255,255,.9);
+}
+.stone.last-move::after{
+  content:'';position:absolute;width:9px;height:9px;border-radius:50%;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.stone.black.last-move::after{background:radial-gradient(circle,#ff6b6b,#c0392b)}
+.stone.white.last-move::after{background:radial-gradient(circle,#e74c3c,#a93226)}
+.stone.dead{opacity:.45}
+.stone.dead::before{
+  content:'×';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);font-size:18px;font-weight:900;z-index:11;line-height:1;
+}
+.stone.black.dead::before{color:#fff}
+.stone.white.dead::before{color:#000}
+.hover-stone{
+  position:absolute;border-radius:50%;top:50%;left:50%;
+  transform:translate(-50%,-50%);z-index:5;opacity:0;pointer-events:none;transition:opacity .12s;
+}
+.cell:hover .hover-stone{opacity:.4}
+.hover-stone.black{background:radial-gradient(ellipse at 50% 50%,#3a3a3a,#0a0a0a)}
+.hover-stone.white{background:radial-gradient(ellipse at 50% 50%,#fafafa,#d5d5d5)}
+.territory{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:8;border-radius:3px;pointer-events:none;
+}
+.territory.black{background:#1d4ed8;border:2px solid #1e3a8a}
+.territory.white{background:#dc2626;border:2px solid #7f1d1d}
+
+/* ── 컨트롤 바 (하단 고정) ─────────────────────────── */
+.ctrl-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(10,18,30,.95);border-top:1px solid rgba(255,255,255,.08);
+  padding:8px 12px;display:flex;align-items:center;gap:8px;
+  flex-wrap:wrap;justify-content:center;min-height:56px;z-index:20;
+}
+.ctrl-btn{
+  padding:9px 18px;border:none;border-radius:8px;cursor:pointer;
+  font-size:14px;font-weight:700;font-family:inherit;transition:all .2s;
+  min-height:40px;min-width:60px;
+}
+.ctrl-btn:disabled{opacity:.35;cursor:not-allowed}
+.ctrl-btn:active:not(:disabled){transform:scale(.95)}
+.btn-pass{background:linear-gradient(135deg,#9b59b6,#8e44ad);color:#fff}
+.btn-resign{background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff}
+.btn-submit{background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff}
+.btn-resume{background:linear-gradient(135deg,#3498db,#2980b9);color:#fff}
+.btn-score-req{background:linear-gradient(135deg,#f39c12,#d68910);color:#fff}
+/* 계가 신청 오버레이 */
+.score-req-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:flex;align-items:center;justify-content:center;display:none}
+.score-req-overlay.show{display:flex}
+.score-req-box{background:#1e2a38;border:1px solid rgba(212,160,86,.4);border-radius:16px;padding:28px 32px;text-align:center;max-width:320px;width:90%}
+.score-req-box h3{color:#f5e6c8;font-size:18px;margin-bottom:10px}
+.score-req-box p{color:#8a9aaa;font-size:13px;margin-bottom:20px;line-height:1.6}
+.score-req-btns{display:flex;gap:10px;justify-content:center}
+/* 계가 결과 오버레이 */
+.score-result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:910;display:none;align-items:center;justify-content:center}
+.score-result-overlay.show{display:flex}
+.score-result-box{background:#1e2a38;border:1px solid rgba(212,160,86,.4);border-radius:16px;padding:28px 32px;max-width:380px;width:92%;text-align:center}
+.score-result-box h3{color:#f5e6c8;font-size:18px;margin-bottom:6px}
+.score-result-winner{font-size:26px;font-weight:700;color:#d4a056;margin:10px 0}
+.score-tbl2{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0;text-align:left}
+.score-tbl2 td{padding:4px 8px;color:#c8d0d8}
+.score-tbl2 td:first-child{color:#7a8a9a;text-align:right;width:50%}
+.score-tbl2 tr.total td{font-weight:700;color:#f5e6c8;border-top:1px solid rgba(255,255,255,.1);padding-top:7px}
+.confirm-status{font-size:12px;color:#7a8a9a;margin:10px 0}
+.btn-inter{background:linear-gradient(135deg,#f39c12,#d68910);color:#1a1a2e}
+.btn-chat{background:rgba(255,255,255,.12);color:#c8d0d8;border:1px solid rgba(255,255,255,.15)}
+.ctrl-msg{font-size:13px;color:#d4a056;font-weight:700;text-align:center}
+
+/* ── 우측 패널 (데스크탑 고정, 모바일 슬라이드업) ─── */
+.side-panel{
+  width:220px;flex-shrink:0;display:flex;flex-direction:column;
+  background:rgba(0,0,0,.3);border-left:1px solid rgba(255,255,255,.06);
+  overflow:hidden;
+}
+.chat-area{
+  flex:1;display:flex;flex-direction:column;padding:10px;gap:6px;min-height:0;
+}
+.chat-head{font-size:11px;color:#6a7a8a;margin-bottom:2px;flex-shrink:0}
+.chat-msgs{
+  flex:1;overflow-y:auto;font-size:12px;line-height:1.7;
+  display:flex;flex-direction:column;gap:1px;
+}
+.chat-msg .nick{font-weight:700;margin-right:3px}
+.chat-msg.black .nick{color:#8ac0f8}
+.chat-msg.white .nick{color:#d4a056}
+.chat-msg.spectator .nick{color:#95a5a6}
+.chat-msg .time{color:#4a5a6a;font-size:10px}
+.chat-msg .txt{color:#c8d0d8;word-break:break-all}
+.chat-input-row{display:flex;gap:6px;flex-shrink:0}
+.chat-input{
+  flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;padding:7px 8px;color:#e0e0e0;font-size:13px;font-family:inherit;
+  outline:none;
+}
+.chat-send{
+  padding:7px 12px;background:rgba(212,160,86,.3);color:#d4a056;
+  border:none;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;
+}
+.spec-box{
+  background:rgba(0,0,0,.2);padding:8px 10px;font-size:11px;flex-shrink:0;
+}
+.spec-box .sh{color:#6a7a8a;margin-bottom:3px}
+.spec-box .sl{color:#a0b0c0;line-height:1.8}
+
+/* 스코어 패널 (계가 시) */
+.score-strip{
+  display:none;background:rgba(0,0,0,.35);
+  border-top:1px solid rgba(255,255,255,.06);
+  padding:8px 12px;font-size:12px;
+}
+.score-strip.show{display:flex;gap:20px;justify-content:center}
+.score-col{display:flex;flex-direction:column;gap:2px;align-items:center}
+.score-col .sc-label{font-size:10px;color:#7a8a9a}
+.score-col .sc-val{color:#f5e6c8;font-weight:700}
+.score-col .sc-total{color:#d4a056;font-size:14px;font-weight:700}
+
+/* ── 모바일 채팅 슬라이드 오버레이 ───────────────── */
+.chat-overlay{
+  display:none;position:fixed;bottom:56px;left:0;right:0;
+  height:55vh;z-index:50;
+  background:rgba(12,18,32,.97);border-top:1px solid rgba(255,255,255,.1);
+  flex-direction:column;
+}
+.chat-overlay.show{display:flex}
+.chat-overlay-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;
+}
+.chat-overlay-head h4{font-size:14px;color:#f5e6c8}
+.chat-overlay-close{
+  background:none;border:none;color:#7a8a9a;font-size:18px;cursor:pointer;padding:0 4px;
+}
+
+/* ── 모달 ─────────────────────────────────────────── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.78);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;padding:16px;
+}
+.overlay.show{display:flex}
+.modal-box{
+  background:#1a1a2e;border:1px solid rgba(255,255,255,.14);
+  border-radius:16px;padding:28px;width:100%;max-width:360px;text-align:center;
+}
+.modal-box h2{font-size:20px;color:#f5e6c8;margin-bottom:12px}
+.result-big{font-size:26px;font-weight:700;margin:10px 0;color:#d4a056}
+.score-tbl{margin:12px auto;font-size:13px;text-align:left}
+.score-tbl td{padding:3px 8px;color:#c8d0d8}
+.score-tbl td:first-child{color:#7a8a9a;text-align:right}
+.modal-btns{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.modal-btns button{
+  padding:11px 20px;border:none;border-radius:8px;cursor:pointer;
+  font-size:14px;font-weight:700;font-family:inherit;min-width:80px;
+}
+.mbtn-ok{background:linear-gradient(135deg,#d4a056,#b8860b);color:#1a1a2e}
+.mbtn-blue{background:linear-gradient(135deg,#3498db,#2980b9);color:#fff}
+.mbtn-gray{background:rgba(255,255,255,.1);color:#888}
+
+.toast{
+  position:fixed;top:54px;left:50%;transform:translateX(-50%);
+  background:rgba(20,20,40,.97);border:1px solid rgba(212,160,86,.4);
+  color:#f5e6c8;padding:9px 20px;border-radius:10px;
+  font-size:13px;z-index:300;opacity:0;transition:opacity .3s;
+  pointer-events:none;max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1}
+
+/* ── 데스크탑 (≥ 769px) ───────────────────────────── */
+@media (min-width:769px) {
+  html,body{overflow:hidden}
+  /* .player-strip은 기본값 none이므로 여기서 별도 설정 불필요 */
+  .main{overflow:hidden}
+  .board-area{padding:12px 12px 68px}
+  .side-panel{display:flex}
+  .chat-overlay{display:none !important}
+  .btn-chat{display:none}
+  /* 데스크탑용 플레이어 카드 (side panel 상단) */
+  .desktop-player{
+    background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.06);
+    padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;
+  }
+  .desktop-player .dp-stone{
+    width:40px;height:40px;border-radius:50%;
+  }
+  .desktop-player .dp-stone.black{background:radial-gradient(circle at 34% 30%,#6f6f6f,#0a0a0a 72%)}
+  .desktop-player .dp-stone.white{background:radial-gradient(circle at 34% 30%,#fff,#d0d0d0 78%);border:1px solid #999}
+  .desktop-player .dp-nick{font-size:13px;font-weight:700;color:#f5e6c8;text-align:center}
+  .desktop-player .dp-rank{font-size:11px;color:#d4a056}
+  .desktop-player .dp-timer{font-size:22px;font-weight:700;font-family:'Consolas',monospace;color:#f5e6c8}
+  .desktop-player .dp-timer.low{color:#e74c3c;animation:blink .8s step-end infinite}
+  .desktop-player .dp-cap{font-size:11px;color:#7a8a9a}
+  .desktop-player.active{background:rgba(212,160,86,.08)}
+  .desktop-score{
+    display:none;padding:8px 12px;font-size:12px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .desktop-score.show{display:block}
+  .desktop-score .sr{display:flex;justify-content:space-between;padding:2px 0;color:#c8d0d8;border-bottom:1px solid rgba(255,255,255,.04)}
+  .desktop-score .sr:last-child{border:none;font-weight:700;color:#f5e6c8}
+}
+
+/* ── 모바일 (< 769px) ─────────────────────────────── */
+@media (max-width:768px) {
+  .player-strip{display:flex}            /* 모바일에서만 표시 */
+  .side-panel{display:none}
+  .score-strip{display:none}             /* JS로 .show 토글 */
+  .desktop-player,.desktop-score{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="hdr">
+  <div class="title" id="room-title">대국방</div>
+  <div class="role-badge spectator" id="role-badge">관전</div>
+  <button class="hdr-btn" onclick="goLobby()">← 로비</button>
+</div>
+
+<!-- 플레이어 스트립 (모바일) -->
+<div class="player-strip">
+  <!-- 흑 -->
+  <div class="ps-card" id="ps-black">
+    <div class="ps-stone black"></div>
+    <div class="ps-info">
+      <div class="ps-nick" id="ps-black-nick">—</div>
+      <div class="ps-rank" id="ps-black-rank"></div>
+      <div class="ps-cap" id="ps-black-cap-lbl">따낸 돌 0</div>
+    </div>
+    <div class="ps-timer" id="ps-timer-black">—</div>
+  </div>
+  <!-- 구분선 -->
+  <div class="ps-divider" id="ps-move-count">0수</div>
+  <!-- 백 -->
+  <div class="ps-card right" id="ps-white">
+    <div class="ps-stone white"></div>
+    <div class="ps-info" style="text-align:right">
+      <div class="ps-nick" id="ps-white-nick">—</div>
+      <div class="ps-rank" id="ps-white-rank"></div>
+      <div class="ps-cap" id="ps-white-cap-lbl">따낸 돌 0</div>
+    </div>
+    <div class="ps-timer" id="ps-timer-white">—</div>
+  </div>
+</div>
+
+<!-- 계가 스코어 스트립 (모바일, 계가 시 표시) -->
+<div class="score-strip" id="score-strip">
+  <div class="score-col">
+    <span class="sc-label">⚫ 집</span><span class="sc-val" id="m-sc-bt">0</span>
+    <span class="sc-label">따낸</span><span class="sc-val" id="m-sc-bc">0</span>
+    <span class="sc-label">합계</span><span class="sc-total" id="m-sc-bs">0</span>
+  </div>
+  <div class="score-col" style="color:#6a7a8a;font-size:18px;align-self:center">vs</div>
+  <div class="score-col">
+    <span class="sc-label">⚪ 집</span><span class="sc-val" id="m-sc-wt">0</span>
+    <span class="sc-label">따낸+덤</span><span class="sc-val" id="m-sc-wc">0</span>
+    <span class="sc-label">합계</span><span class="sc-total" id="m-sc-ws">0</span>
+  </div>
+</div>
+
+<!-- 메인 -->
+<div class="main">
+  <!-- 바둑판 -->
+  <div class="board-area">
+    <div class="board-wrap">
+      <div class="board-inner">
+        <div id="board"></div>
+      </div>
+    </div>
+    <!-- 컨트롤 바 -->
+    <div class="ctrl-bar" id="ctrl-bar">
+      <span class="ctrl-msg" id="ctrl-msg">연결 중…</span>
+    </div>
+  </div>
+
+  <!-- 우측 패널 (데스크탑) -->
+  <div class="side-panel">
+    <!-- 흑 플레이어 -->
+    <div class="desktop-player" id="dp-black">
+      <div class="dp-stone black"></div>
+      <div class="dp-nick" id="dp-black-nick">—</div>
+      <div class="dp-rank" id="dp-black-rank"></div>
+      <div class="dp-timer" id="dp-timer-black">—</div>
+      <div class="dp-cap" id="dp-black-cap">따낸 돌: 0</div>
+    </div>
+    <div class="desktop-score" id="ds-black">
+      <div class="sr"><span>집</span><span id="ds-bt">0</span></div>
+      <div class="sr"><span>따낸+사석</span><span id="ds-bc">0</span></div>
+      <div class="sr"><span>흑 합계</span><span id="ds-bs">0</span></div>
+    </div>
+    <!-- 채팅 -->
+    <div class="chat-area">
+      <div class="chat-head">💬 채팅 &nbsp;<span id="spec-count" style="color:#3498db">0</span>명 관전</div>
+      <div class="chat-msgs" id="chat-msgs"></div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-in" placeholder="메시지…" maxlength="200">
+        <button class="chat-send" onclick="sendChat()">전송</button>
+      </div>
+    </div>
+    <!-- 백 플레이어 -->
+    <div class="desktop-player" id="dp-white">
+      <div class="dp-stone white"></div>
+      <div class="dp-nick" id="dp-white-nick">—</div>
+      <div class="dp-rank" id="dp-white-rank"></div>
+      <div class="dp-timer" id="dp-timer-white">—</div>
+      <div class="dp-cap" id="dp-white-cap">따낸 돌: 0  덤: 6.5</div>
+    </div>
+    <div class="desktop-score" id="ds-white">
+      <div class="sr"><span>집</span><span id="ds-wt">0</span></div>
+      <div class="sr"><span>따낸+사석+덤</span><span id="ds-wc">0</span></div>
+      <div class="sr"><span>백 합계</span><span id="ds-ws">0</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 모바일 채팅 오버레이 -->
+<div class="chat-overlay" id="chat-overlay">
+  <div class="chat-overlay-head">
+    <h4>💬 채팅 · <span id="spec-count-m">0</span>명 관전</h4>
+    <button class="chat-overlay-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-msgs" id="chat-msgs-m" style="flex:1;overflow-y:auto;padding:8px 12px;font-size:13px;line-height:1.7"></div>
+  <div class="chat-input-row" style="padding:8px 12px;flex-shrink:0">
+    <input class="chat-input" id="chat-in-m" placeholder="메시지…" maxlength="200">
+    <button class="chat-send" onclick="sendChatM()">전송</button>
+  </div>
+</div>
+
+<!-- 계가 신청 수락/거부 모달 -->
+<div class="score-req-overlay" id="score-req-overlay">
+  <div class="score-req-box">
+    <h3>⚖️ 계가 신청</h3>
+    <p id="score-req-msg">상대방이 계가를 신청했습니다.<br>수락하시겠습니까?</p>
+    <div class="score-req-btns">
+      <button class="mbtn-ok" onclick="acceptScore()">✔ 수락</button>
+      <button class="mbtn-gray" onclick="rejectScore()">✘ 거절</button>
+    </div>
+  </div>
+</div>
+
+<!-- 계가 결과 모달 -->
+<div class="score-result-overlay" id="score-result-overlay">
+  <div class="score-result-box">
+    <h3>⚖️ AI 계가 결과</h3>
+    <div class="score-result-winner" id="sr-winner">—</div>
+    <table class="score-tbl2" id="sr-tbl"></table>
+    <div class="confirm-status" id="sr-status"></div>
+    <div class="score-req-btns" id="sr-btns">
+      <button class="mbtn-ok" id="sr-confirm-btn" onclick="confirmScore()">✔ 동의</button>
+      <button class="mbtn-gray" onclick="disputeScore()">✘ 이의</button>
+    </div>
+  </div>
+</div>
+
+<!-- 결과 모달 -->
+<!-- 대국 종료 결과 패널 (방 안에 인라인으로 표시) -->
+<div id="result-panel" style="display:none; position:fixed; top:56px; left:50%; transform:translateX(-50%);
+  z-index:800; background:#1a2535; border:1px solid rgba(212,160,86,.5); border-radius:12px;
+  padding:16px 24px; min-width:280px; max-width:92vw; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,.6);">
+  <div id="res-title" style="font-size:16px; color:#f5e6c8; font-weight:700; margin-bottom:4px;">대국 종료</div>
+  <div id="res-result" style="font-size:22px; font-weight:700; color:#d4a056; margin:6px 0;">—</div>
+  <table id="res-tbl" style="margin:8px auto; font-size:12px; text-align:left; border-collapse:collapse;"></table>
+  <div style="display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap;">
+    <button class="mbtn-blue" onclick="enterReplay()">🎞 기보 확인</button>
+    <button id="res-sgf-btn" class="mbtn-blue" style="display:none" onclick="downloadSGF()">⬇ SGF 저장</button>
+    <button class="mbtn-ok" onclick="dismissResult()">✕ 닫기</button>
+    <button class="mbtn-gray" onclick="goLobby()">← 로비로</button>
+  </div>
+</div>
+
+<!-- 사석 이견 모달 -->
+<div class="overlay" id="disagree-overlay">
+  <div class="modal-box">
+    <h2>사석 이견</h2>
+    <p style="color:#8a9aaa;font-size:13px;margin-bottom:16px;line-height:1.7">
+      양측의 사석 지정이 다릅니다.<br>어떻게 처리할까요?
+    </p>
+    <div class="modal-btns">
+      <button class="mbtn-blue" onclick="acceptIntersection()">공통 사석만 계가</button>
+      <button class="mbtn-gray" onclick="resumePlay()">계속 두기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ──────────────────────────────────────────────────────────
+// 전역 상태
+// ──────────────────────────────────────────────────────────
+const COORDS = 'ABCDEFGHJKLMNOPQRST';
+const roomId = new URLSearchParams(location.search).get('id');
+let me = null, myRole = null;
+let board = [], boardSize = 19, komi = 6.5;
+let currentPlayer = 'black';
+let lastMove = null;
+let capturedB = 0, capturedW = 0;
+let phase = 'waiting';
+let myDeadStones = new Set();
+let submitted = false;
+let territories = { black: [], white: [] };
+let showTerr = false;
+let cellSize = 28;
+let moveCount = 0;
+let gameId = roomId;
+let replayMoves = [];
+let replayStates = [];
+let replayStep = 0;
+let inReplay = false;
+let isMobile = () => window.innerWidth < 769;
+
+if (!roomId) { alert('잘못된 접근'); location.href = '/'; }
+
+// ──────────────────────────────────────────────────────────
+// 세션 확인 + 소켓 연결
+// ──────────────────────────────────────────────────────────
+fetch('/auth/me').then(r=>r.json()).then(d=>{
+  if (!d.ok) return location.href = '/login.html';
+  me = d.user;
+});
+
+const socket = io();
+socket.on('connect', () => socket.emit('join-room', { roomId }));
+
+// ──────────────────────────────────────────────────────────
+// 소켓 이벤트
+// ──────────────────────────────────────────────────────────
+socket.on('joined-room', ({ role, snap }) => {
+  myRole = role;
+  applySnap(snap);
+  setRoleBadge(role);
+  toast(role==='black' ? '⚫ 흑으로 입장' : role==='white' ? '⚪ 백으로 입장' : '👁 관전 중');
+});
+
+socket.on('room-update', snap => applySnap(snap));
+
+socket.on('stone-placed', d => {
+  board = d.board;
+  currentPlayer = d.currentPlayer;
+  lastMove = d.lastMove;
+  capturedB = d.capturedBlack;
+  capturedW = d.capturedWhite;
+  moveCount = d.moveNum;
+  renderBoard();
+  updatePlayers();
+  updateCtrlBar();
+  addChat({ nick:'', text:`${d.moveNum}. ${d.player==='black'?'⚫':'⚪'} ${d.coord}${d.capturedCount?` (${d.capturedCount}점)`:''}`, role:'system', time:'' });
+});
+
+socket.on('pass-done', d => {
+  currentPlayer = d.currentPlayer;
+  updateCtrlBar();
+  toast(`${d.player==='black'?'흑':'백'} 패스`);
+});
+
+socket.on('enter-marking', d => {
+  phase = 'marking';
+  board = d.board;
+  myDeadStones = new Set(d.suggested || []);
+  submitted = false;
+  showTerr = true;
+  calcLocalTerritory();
+  renderBoard();
+  updateScoreUI();
+  updateCtrlBar();
+  toast('양측 패스 — 죽은 돌 확인 후 제출하세요');
+});
+
+socket.on('dead-submitted', d => {
+  if (d.player !== myRole) toast('상대가 제출했습니다. 당신도 제출하세요.');
+});
+
+socket.on('dead-disagreement', () => {
+  document.getElementById('disagree-overlay').classList.add('show');
+});
+
+socket.on('resumed-play', d => {
+  phase = 'playing';
+  currentPlayer = d.currentPlayer;
+  board = d.board;
+  myDeadStones = new Set();
+  submitted = false;
+  showTerr = false;
+  territories = { black:[], white:[] };
+  document.getElementById('score-strip').classList.remove('show');
+  document.getElementById('ds-black').classList.remove('show');
+  document.getElementById('ds-white').classList.remove('show');
+  renderBoard();
+  updateCtrlBar();
+  toast('대국 계속');
+});
+
+socket.on('game-ended', d => {
+  phase = 'ended';
+  // 계가 관련 오버레이 닫기
+  document.getElementById('score-result-overlay').classList.remove('show');
+  document.getElementById('score-req-overlay').classList.remove('show');
+  // 기보 리플레이용 moveList 저장 및 사전 계산
+  if (d.moveList?.length) {
+    replayMoves = d.moveList;
+    replayStates = buildReplayStates(replayMoves, boardSize);
+  }
+
+  if (d.deadStones?.length) {
+    for (const k of d.deadStones) {
+      const [x,y]=k.split(',').map(Number);
+      if(board[y]?.[x]) myDeadStones.add(k);
+    }
+  }
+  showTerr = true;
+  if (d.scoreData?.territories) territories = d.scoreData.territories;
+  else calcLocalTerritory();
+  renderBoard();
+  updateCtrlBar();
+  showResult(d);
+});
+
+// ── 계가 소켓 이벤트 ──────────────────────────────────────
+socket.on('score-requested', d => {
+  if (d.requester === myRole) {
+    toast('⚖️ 계가 신청을 보냈습니다. 상대 응답 대기 중…');
+  } else {
+    document.getElementById('score-req-msg').innerHTML =
+      `<b>${d.nick}</b>이(가) 계가를 신청했습니다.<br>수락하시겠습니까?`;
+    document.getElementById('score-req-overlay').classList.add('show');
+  }
+});
+
+socket.on('score-rejected', d => {
+  document.getElementById('score-req-overlay').classList.remove('show');
+  toast(`⚖️ ${d.rejecter==='black'?'흑':'백'}이 계가를 거절했습니다. 대국을 계속합니다.`);
+  phase = 'playing';
+  updateCtrlBar();
+});
+
+socket.on('score-accepted', d => {
+  document.getElementById('score-req-overlay').classList.remove('show');
+  toast('⚖️ 계가 수락 — AI 계가 중…');
+  if (d.accepter === myRole) {
+    callAIScore(d.board, d.boardSize, d.komi);
+  }
+});
+
+socket.on('score-result', d => {
+  showScoreResult(d.scoreData, d.ownership);
+});
+
+socket.on('score-confirmed-by', d => {
+  const other = d.role === 'black' ? '흑' : '백';
+  document.getElementById('sr-status').textContent = `${other}이 동의했습니다. 상대 응답 대기 중…`;
+  if (d.role === myRole) {
+    document.getElementById('sr-confirm-btn').disabled = true;
+    document.getElementById('sr-confirm-btn').textContent = '✔ 동의함';
+  }
+});
+
+socket.on('score-disputed', d => {
+  document.getElementById('score-result-overlay').classList.remove('show');
+  phase = 'playing';
+  currentPlayer = d.currentPlayer;
+  board = d.board;
+  showTerr = false;
+  myDeadStones = new Set();
+  territories = { black:[], white:[] };
+  document.getElementById('score-strip').classList.remove('show');
+  renderBoard();
+  updateCtrlBar();
+  toast('⚖️ 계가 이의 — 대국을 계속합니다.');
+});
+
+// ── 계가 함수 ──────────────────────────────────────────────
+function requestScore() {
+  socket.emit('request-score');
+}
+function acceptScore() {
+  document.getElementById('score-req-overlay').classList.remove('show');
+  socket.emit('accept-score');
+}
+function rejectScore() {
+  document.getElementById('score-req-overlay').classList.remove('show');
+  socket.emit('reject-score');
+}
+function confirmScore() { socket.emit('confirm-score'); }
+function disputeScore() {
+  if (confirm('계가 결과에 이의를 제기하고 대국을 계속하시겠습니까?')) {
+    socket.emit('dispute-score');
+  }
+}
+
+function callAIScore(aiBoard, aiSize, aiKomi) {
+  const AI_URL = 'http://localhost:3200';
+  function doScore(ioLib) {
+    const aiSock = ioLib(AI_URL, { transports: ['websocket','polling'], reconnection: false });
+    const stones = [];
+    for (let y = 0; y < aiSize; y++)
+      for (let x = 0; x < aiSize; x++) {
+        if (aiBoard[y][x] === 'black') stones.push(['B', COORDS[x] + (aiSize - y)]);
+        if (aiBoard[y][x] === 'white') stones.push(['W', COORDS[x] + (aiSize - y)]);
+      }
+    aiSock.on('connect', () => {
+      aiSock.emit('score', { id: Date.now(), stones, komi: aiKomi, boardSize: aiSize, rules:'japanese', maxVisits: 300 });
+    });
+    aiSock.on('score_result', res => {
+      aiSock.disconnect();
+      socket.emit('ai-score-result', { ownership: res.ownership });
+    });
+    aiSock.on('connect_error', () => {
+      aiSock.disconnect();
+      toast('⚠ AI 서버 연결 실패 — 수동 계가로 대체합니다');
+      socket.emit('ai-score-result', { ownership: null });
+    });
+    setTimeout(() => { aiSock.disconnect(); socket.emit('ai-score-result', { ownership: null }); }, 30000);
+  }
+  if (typeof io !== 'undefined') {
+    doScore(io);
+  } else {
+    const s = document.createElement('script');
+    s.src = AI_URL + '/socket.io/socket.io.js';
+    s.onload = () => doScore(io);
+    s.onerror = () => { toast('⚠ AI 서버 미실행'); socket.emit('ai-score-result', { ownership: null }); };
+    document.head.appendChild(s);
+  }
+}
+
+function showScoreResult(sd, ownership) {
+  const box = document.getElementById('score-result-overlay');
+  const winnerEl = document.getElementById('sr-winner');
+  const tbl = document.getElementById('sr-tbl');
+  const status = document.getElementById('sr-status');
+  const confirmBtn = document.getElementById('sr-confirm-btn');
+
+  const bWin = sd.winner === 'black';
+  winnerEl.textContent = bWin ? `⚫ 흑 승 (${sd.result})` : `⚪ 백 승 (${sd.result})`;
+  winnerEl.style.color = bWin ? '#a0c8e0' : '#e8e8e8';
+
+  tbl.innerHTML = `
+    <tr><td>흑 집</td><td>${sd.blackTerritory}</td><td>백 집</td><td>${sd.whiteTerritory}</td></tr>
+    <tr><td>흑 따낸 돌</td><td>${sd.capturedBlack ?? ''}</td><td>백 따낸 돌</td><td>${sd.capturedWhite ?? ''}</td></tr>
+    <tr><td>흑 사석</td><td>${sd.blackDead}</td><td>백 사석</td><td>${sd.whiteDead}</td></tr>
+    <tr><td>덤</td><td>—</td><td>${sd.komi ?? komi}</td><td></td></tr>
+    <tr class="total"><td>흑 합계</td><td>${sd.blackScore}</td><td>백 합계</td><td>${sd.whiteScore}</td></tr>`;
+
+  if (ownership) {
+    const size = Math.round(Math.sqrt(ownership.length));
+    myDeadStones = new Set(sd.dead || []);
+    showTerr = true;
+    calcTerritoryFromOwnership(ownership, size);
+    renderBoard();
+  }
+
+  status.textContent = '양측이 동의하면 대국이 종료됩니다.';
+  confirmBtn.disabled = false;
+  confirmBtn.textContent = '✔ 동의';
+  box.classList.add('show');
+}
+
+function calcTerritoryFromOwnership(ownership, size) {
+  territories = { black: [], white: [] };
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      const o = ownership[y * size + x];
+      if (!board[y]?.[x]) {
+        if (o > 0.4) territories.black.push(`${x},${y}`);
+        else if (o < -0.4) territories.white.push(`${x},${y}`);
+      }
+    }
+}
+
+socket.on('timer-tick', d => {
+  updateTimer('black', d.black, d.active==='black');
+  updateTimer('white', d.white, d.active==='white');
+});
+
+socket.on('time-out', d => toast(`⏱ ${d.loser==='black'?'흑':'백'} 시간 초과`));
+socket.on('move-error', msg => toast('⚠ ' + msg));
+socket.on('player-disconnected', d => toast(`⚠ ${d.nick} 연결 끊김`));
+socket.on('chat', msg => addChat(msg));
+socket.on('room-error', msg => { alert(msg); location.href='/'; });
+
+// ──────────────────────────────────────────────────────────
+// 스냅샷 적용
+// ──────────────────────────────────────────────────────────
+function applySnap(s) {
+  boardSize     = s.size;
+  komi          = s.komi;
+  board         = s.board;
+  currentPlayer = s.currentPlayer;
+  lastMove      = s.lastMove;
+  capturedB     = s.capturedBlack;
+  capturedW     = s.capturedWhite;
+  phase         = s.phase;
+  moveCount     = s.moveCount || 0;
+  document.getElementById('room-title').textContent = s.title;
+  calcCellSize();
+
+  updatePlayers(s.players);
+  updateTimer('black', s.timers.black, currentPlayer==='black');
+  updateTimer('white', s.timers.white, currentPlayer==='white');
+
+  const specs = s.spectators || [];
+  document.getElementById('spec-count').textContent   = specs.length;
+  document.getElementById('spec-count-m').textContent = specs.length;
+
+  const chatEl = document.getElementById('chat-msgs');
+  const chatElM = document.getElementById('chat-msgs-m');
+  chatEl.innerHTML = '';
+  chatElM.innerHTML = '';
+  (s.chat || []).forEach(m => addChat(m));
+
+  renderBoard();
+  updateCtrlBar();
+}
+
+// ──────────────────────────────────────────────────────────
+// 바둑판
+// ──────────────────────────────────────────────────────────
+function calcCellSize() {
+  const mobile = isMobile();
+  const hdrH   = 46;
+  const stripH = mobile ? 70 : 0;
+  const scoreH = mobile && showTerr ? 80 : 0;
+  const ctrlH  = 56;
+  const boardPad = mobile ? 24 : 28;   // board-wrap padding × 2
+  const innerPad = mobile ? 20 : 24;   // board-inner padding × 2
+
+  const availH = window.innerHeight - hdrH - stripH - scoreH - ctrlH - boardPad - innerPad - 20;
+  const availW = window.innerWidth - (mobile ? 0 : 220) - boardPad - innerPad - 20;
+
+  cellSize = Math.min(
+    Math.floor(availH / boardSize),
+    Math.floor(availW / boardSize),
+    mobile ? 30 : 36
+  );
+  cellSize = Math.max(cellSize, mobile ? 14 : 16);
+}
+
+function getStars(sz) {
+  if (sz===9)  return [{x:2,y:2},{x:6,y:2},{x:4,y:4},{x:2,y:6},{x:6,y:6}];
+  if (sz===13) return [{x:3,y:3},{x:9,y:3},{x:6,y:6},{x:3,y:9},{x:9,y:9}];
+  return [{x:3,y:3},{x:9,y:3},{x:15,y:3},{x:3,y:9},{x:9,y:9},{x:15,y:9},{x:3,y:15},{x:9,y:15},{x:15,y:15}];
+}
+
+function renderBoard() {
+  const el = document.getElementById('board');
+  el.innerHTML = '';
+  el.style.gridTemplateColumns = `repeat(${boardSize},${cellSize}px)`;
+
+  const stars   = new Set(getStars(boardSize).map(p=>`${p.x},${p.y}`));
+  const ss      = Math.floor(cellSize * 0.88);
+  const ts      = Math.floor(cellSize * 0.33);
+  const tbSet   = new Set(territories.black);
+  const twSet   = new Set(territories.white);
+
+  for (let y = 0; y < boardSize; y++) {
+    for (let x = 0; x < boardSize; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.width = cell.style.height = cellSize + 'px';
+      if (y===0)           cell.classList.add('edge-top');
+      if (y===boardSize-1) cell.classList.add('edge-bottom');
+      if (x===0)           cell.classList.add('edge-left');
+      if (x===boardSize-1) cell.classList.add('edge-right');
+
+      if (stars.has(`${x},${y}`)) {
+        const sp = document.createElement('div');
+        sp.className = 'star-point';
+        cell.appendChild(sp);
+      }
+
+      // 집 표시
+      if (showTerr) {
+        const k = `${x},${y}`;
+        if (tbSet.has(k) || twSet.has(k)) {
+          const t = document.createElement('div');
+          t.className = 'territory ' + (tbSet.has(k) ? 'black' : 'white');
+          t.style.width = t.style.height = ts + 'px';
+          cell.appendChild(t);
+        }
+      }
+
+      const stone = board[y][x];
+      if (stone) {
+        const s = document.createElement('div');
+        s.className = `stone ${stone}`;
+        s.style.width = s.style.height = ss + 'px';
+        if (lastMove && lastMove.x===x && lastMove.y===y && phase==='playing')
+          s.classList.add('last-move');
+        if (myDeadStones.has(`${x},${y}`)) s.classList.add('dead');
+
+        if (phase==='marking' && !submitted) {
+          addTouchClick(s, () => toggleDead(x, y));
+        }
+        cell.appendChild(s);
+
+      } else if (phase==='playing' && canPlace()) {
+        const h = document.createElement('div');
+        h.className = `hover-stone ${currentPlayer}`;
+        h.style.width = h.style.height = ss + 'px';
+        cell.appendChild(h);
+        addTouchClick(cell, () => socket.emit('place-stone', { x, y }));
+      }
+
+      el.appendChild(cell);
+    }
+  }
+}
+
+// 터치 + 클릭 겸용 이벤트 헬퍼 (300ms 딜레이 없는 즉시 착수)
+function addTouchClick(el, fn) {
+  let touched = false;
+  el.addEventListener('touchend', e => {
+    e.preventDefault();
+    touched = true;
+    fn();
+    setTimeout(() => touched = false, 500);
+  }, { passive: false });
+  el.addEventListener('click', () => {
+    if (!touched) fn();
+  });
+}
+
+// ──────────────────────────────────────────────────────────
+// 사석 토글
+// ──────────────────────────────────────────────────────────
+function toggleDead(x, y) {
+  if (submitted || phase !== 'marking') return;
+  const group = getGroup(x, y);
+  const isAlreadyDead = group.some(p => myDeadStones.has(`${p.x},${p.y}`));
+  for (const p of group) {
+    const pk = `${p.x},${p.y}`;
+    if (isAlreadyDead) myDeadStones.delete(pk);
+    else               myDeadStones.add(pk);
+  }
+  calcLocalTerritory();
+  renderBoard();
+  updateScoreUI();
+}
+
+function getGroup(sx, sy) {
+  const color = board[sy][sx];
+  if (!color) return [];
+  const group=[], visited=new Set(), stack=[{x:sx,y:sy}];
+  while(stack.length){
+    const p=stack.pop(), pk=`${p.x},${p.y}`;
+    if(visited.has(pk)) continue;
+    visited.add(pk);
+    if(board[p.y][p.x]!==color) continue;
+    group.push(p);
+    for(const n of nbrs(p.x,p.y)) if(!visited.has(`${n.x},${n.y}`)) stack.push(n);
+  }
+  return group;
+}
+
+function nbrs(x, y) {
+  const n=[];
+  if(x>0) n.push({x:x-1,y});
+  if(x<boardSize-1) n.push({x:x+1,y});
+  if(y>0) n.push({x,y:y-1});
+  if(y<boardSize-1) n.push({x,y:y+1});
+  return n;
+}
+
+function calcLocalTerritory() {
+  const visited=new Set();
+  territories={black:[],white:[]};
+  for(let y=0;y<boardSize;y++){
+    for(let x=0;x<boardSize;x++){
+      const k=`${x},${y}`;
+      if(visited.has(k)) continue;
+      if(board[y][x]&&!myDeadStones.has(k)) continue;
+      const region=[],borders=new Set(),stack=[{x,y}];
+      while(stack.length){
+        const p=stack.pop(),pk=`${p.x},${p.y}`;
+        if(visited.has(pk)) continue;
+        const s=board[p.y][p.x];
+        if(s&&!myDeadStones.has(pk)){borders.add(s);continue;}
+        visited.add(pk);region.push(pk);
+        for(const n of nbrs(p.x,p.y)) if(!visited.has(`${n.x},${n.y}`)) stack.push(n);
+      }
+      if(borders.size===1) territories[borders.values().next().value].push(...region);
+    }
+  }
+}
+
+function updateScoreUI() {
+  const dead = myDeadStones;
+  let bd=0, wd=0;
+  for(const k of dead){
+    const [x,y]=k.split(',').map(Number);
+    if(board[y][x]==='black') bd++;
+    else if(board[y][x]==='white') wd++;
+  }
+  const bt=territories.black.length;
+  const wt=territories.white.length;
+  const bs=bt+capturedB+wd;
+  const ws=wt+capturedW+bd+komi;
+
+  // 모바일 스코어 스트립
+  document.getElementById('m-sc-bt').textContent = bt;
+  document.getElementById('m-sc-bc').textContent = (capturedB+wd);
+  document.getElementById('m-sc-bs').textContent = bs;
+  document.getElementById('m-sc-wt').textContent = wt;
+  document.getElementById('m-sc-wc').textContent = (capturedW+bd+komi).toFixed(1);
+  document.getElementById('m-sc-ws').textContent = ws.toFixed(1);
+  document.getElementById('score-strip').classList.toggle('show', showTerr);
+
+  // 데스크탑 스코어
+  document.getElementById('ds-bt').textContent = bt;
+  document.getElementById('ds-bc').textContent = (capturedB+wd);
+  document.getElementById('ds-bs').textContent = bs;
+  document.getElementById('ds-wt').textContent = wt;
+  document.getElementById('ds-wc').textContent = (capturedW+bd+komi).toFixed(1);
+  document.getElementById('ds-ws').textContent = ws.toFixed(1);
+  document.getElementById('ds-black').classList.toggle('show', showTerr);
+  document.getElementById('ds-white').classList.toggle('show', showTerr);
+}
+
+// ──────────────────────────────────────────────────────────
+// 컨트롤 바
+// ──────────────────────────────────────────────────────────
+function canPlace() {
+  return phase==='playing' && myRole===currentPlayer;
+}
+
+function updateCtrlBar() {
+  const bar = document.getElementById('ctrl-bar');
+  const msg = document.getElementById('ctrl-msg');
+  bar.innerHTML = '';
+
+  const chatBtn = mkBtn('💬', 'ctrl-btn btn-chat', toggleChat);
+
+  if (phase==='waiting') {
+    msg.textContent = '상대를 기다리는 중…';
+    bar.appendChild(msg);
+    if(isMobile()) bar.appendChild(chatBtn);
+    return;
+  }
+
+  if (phase==='playing') {
+    if (myRole==='spectator') {
+      msg.textContent = currentPlayer==='black' ? '⚫ 흑 차례' : '⚪ 백 차례';
+      bar.appendChild(msg);
+      if(isMobile()) bar.appendChild(chatBtn);
+      return;
+    }
+    const myTurn = currentPlayer===myRole;
+    msg.textContent = myTurn ? `내 차례 (${myRole==='black'?'⚫':'⚪'})` : '상대 차례…';
+    bar.appendChild(msg);
+
+    const passBtn = mkBtn('패스', 'ctrl-btn btn-pass', () => socket.emit('pass-turn'));
+    passBtn.disabled = !myTurn;
+    bar.appendChild(passBtn);
+
+    const scoreReqBtn = mkBtn('계가 신청', 'ctrl-btn btn-score-req', requestScore);
+    bar.appendChild(scoreReqBtn);
+
+    const resignBtn = mkBtn('불계', 'ctrl-btn btn-resign', () => {
+      if(confirm('불계패 하시겠습니까?')) socket.emit('resign');
+    });
+    bar.appendChild(resignBtn);
+    if(isMobile()) bar.appendChild(chatBtn);
+    return;
+  }
+
+  if (phase==='marking') {
+    if (myRole==='spectator') {
+      msg.textContent = '사석 확인 단계';
+      bar.appendChild(msg);
+      if(isMobile()) bar.appendChild(chatBtn);
+      return;
+    }
+    if (!submitted) {
+      msg.textContent = '죽은 돌 클릭';
+      bar.appendChild(msg);
+      bar.appendChild(mkBtn('제출', 'ctrl-btn btn-submit', submitDead));
+      bar.appendChild(mkBtn('불계', 'ctrl-btn btn-resign', () => {
+        if(confirm('불계패?')) socket.emit('resign');
+      }));
+    } else {
+      msg.textContent = '상대 확인 중…';
+      bar.appendChild(msg);
+    }
+    if(isMobile()) bar.appendChild(chatBtn);
+    return;
+  }
+
+  if (phase==='ended') {
+    msg.textContent = '대국 종료';
+    bar.appendChild(msg);
+    if(isMobile()) bar.appendChild(chatBtn);
+  }
+}
+
+function mkBtn(txt, cls, fn) {
+  const b = document.createElement('button');
+  b.textContent = txt;
+  b.className = cls;
+  b.onclick = fn;
+  return b;
+}
+
+function submitDead() {
+  submitted = true;
+  socket.emit('submit-dead', { deadStones: [...myDeadStones] });
+  updateCtrlBar();
+  toast('제출 완료. 상대 확인 대기 중…');
+}
+
+function acceptIntersection() {
+  document.getElementById('disagree-overlay').classList.remove('show');
+  socket.emit('accept-intersection');
+}
+
+function resumePlay() {
+  document.getElementById('disagree-overlay').classList.remove('show');
+  socket.emit('resume-play');
+}
+
+// ──────────────────────────────────────────────────────────
+// 플레이어 UI 업데이트
+// ──────────────────────────────────────────────────────────
+function updatePlayers(players) {
+  if (players) {
+    // 모바일 스트립
+    document.getElementById('ps-black-nick').textContent = players.black?.nick || '대기중…';
+    document.getElementById('ps-black-rank').textContent = players.black?.rank || '';
+    document.getElementById('ps-white-nick').textContent = players.white?.nick || '대기중…';
+    document.getElementById('ps-white-rank').textContent = players.white?.rank || '';
+    // 데스크탑 패널
+    document.getElementById('dp-black-nick').textContent = players.black?.nick || '대기중…';
+    document.getElementById('dp-black-rank').textContent = players.black?.rank || '';
+    document.getElementById('dp-white-nick').textContent = players.white?.nick || '대기중…';
+    document.getElementById('dp-white-rank').textContent = players.white?.rank || '';
+  }
+  // 따낸 돌 + 수 수
+  document.getElementById('ps-black-cap-lbl').textContent = `따낸 돌 ${capturedB}`;
+  document.getElementById('ps-white-cap-lbl').textContent = `따낸 돌 ${capturedW}`;
+  document.getElementById('ps-move-count').textContent   = `${moveCount}수`;
+  document.getElementById('dp-black-cap').textContent    = `따낸 돌: ${capturedB}`;
+  document.getElementById('dp-white-cap').textContent    = `따낸 돌: ${capturedW}  덤: ${komi}`;
+}
+
+function updateTimer(color, sec, active) {
+  const t   = fmt(sec);
+  const low = sec != null && sec < 30;
+
+  // 모바일 스트립
+  const psEl = document.getElementById(`ps-timer-${color}`);
+  psEl.textContent = t;
+  psEl.classList.toggle('low', low);
+  document.getElementById(`ps-${color}`).classList.toggle('active', active && phase==='playing');
+
+  // 데스크탑
+  const dpEl = document.getElementById(`dp-timer-${color}`);
+  dpEl.textContent = t;
+  dpEl.classList.toggle('low', low);
+  document.getElementById(`dp-${color}`).classList.toggle('active', active && phase==='playing');
+}
+
+function fmt(sec) {
+  if (sec == null) return '—';
+  if (sec <= 0) return '0:00';
+  return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+}
+
+// ──────────────────────────────────────────────────────────
+// 결과
+// ──────────────────────────────────────────────────────────
+function showResult(d) {
+  const winner = d.winner==='black' ? '⚫ 흑' : '⚪ 백';
+  document.getElementById('res-title').textContent  = `${winner} 승리`;
+  document.getElementById('res-result').textContent = d.result;
+
+  let tbl = '';
+  if (d.scoreData) {
+    const s = d.scoreData;
+    tbl = `<tr><td>흑 집</td><td>${s.blackTerritory}</td></tr>
+           <tr><td>흑 따낸+사석</td><td>${s.blackScore-s.blackTerritory}</td></tr>
+           <tr><td>흑 합계</td><td><b>${s.blackScore}</b></td></tr>
+           <tr><td>백 집</td><td>${s.whiteTerritory}</td></tr>
+           <tr><td>백 따낸+사석+덤</td><td>${(s.whiteScore-s.whiteTerritory).toFixed(1)}</td></tr>
+           <tr><td>백 합계</td><td><b>${s.whiteScore.toFixed(1)}</b></td></tr>`;
+  }
+  document.getElementById('res-tbl').innerHTML = tbl;
+
+  if (d.gameId) {
+    gameId = d.gameId;
+    document.getElementById('res-sgf-btn').style.display = 'inline-block';
+  }
+
+  document.getElementById('result-overlay').classList.add('show');
+}
+
+function downloadSGF() { window.open(`/sgf/${gameId}`, '_blank'); }
+
+// ──────────────────────────────────────────────────────────
+// 채팅
+// ──────────────────────────────────────────────────────────
+function addChat(msg) {
+  const html = msg.nick
+    ? `<div class="chat-msg ${msg.role}"><span class="time">${msg.time} </span><span class="nick">${esc(msg.nick)}</span><span class="txt">${esc(msg.text)}</span></div>`
+    : `<div style="font-size:11px;color:#4a5a6a;padding:2px 0">${esc(msg.text)}</div>`;
+
+  const el  = document.getElementById('chat-msgs');
+  const elM = document.getElementById('chat-msgs-m');
+  el.insertAdjacentHTML('beforeend', html);
+  elM.insertAdjacentHTML('beforeend', html);
+  el.scrollTop  = el.scrollHeight;
+  elM.scrollTop = elM.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-in');
+  const text  = input.value.trim();
+  if (!text) return;
+  socket.emit('chat-message', { text });
+  input.value = '';
+}
+
+function sendChatM() {
+  const input = document.getElementById('chat-in-m');
+  const text  = input.value.trim();
+  if (!text) return;
+  socket.emit('chat-message', { text });
+  input.value = '';
+}
+
+document.getElementById('chat-in').addEventListener('keydown', e => { if(e.key==='Enter') sendChat(); });
+document.getElementById('chat-in-m').addEventListener('keydown', e => { if(e.key==='Enter') sendChatM(); });
+
+function toggleChat() {
+  document.getElementById('chat-overlay').classList.toggle('show');
+}
+
+// ──────────────────────────────────────────────────────────
+// 기타
+// ──────────────────────────────────────────────────────────
+function setRoleBadge(role) {
+  const b = document.getElementById('role-badge');
+  b.className = `role-badge ${role}`;
+  b.textContent = { black:'⚫ 흑', white:'⚪ 백', spectator:'👁 관전' }[role] || role;
+}
+
+function toast(msg, ms=3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+function goLobby() { location.href = '/'; }
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+window.addEventListener('resize', () => { calcCellSize(); renderBoard(); updateCtrlBar(); });
+</script>
+</body>
+</html>

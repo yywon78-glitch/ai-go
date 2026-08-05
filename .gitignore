@@ -1,0 +1,8 @@
+node_modules/
+.env
+baduk.db
+baduk.db-wal
+baduk.db-shm
+sgf_records/
+_versions/
+계획서*.html

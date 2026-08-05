@@ -1,0 +1,18 @@
+{
+  "name": "smart-baduk",
+  "version": "1.0.0",
+  "description": "사람 vs 사람 실시간 온라인 바둑 대국 플랫폼",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "node-sqlite3-wasm": "^0.8.37",
+    "bcryptjs": "^2.4.3",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "socket.io": "^4.6.1",
+    "uuid": "^9.0.0"
+  }
+}

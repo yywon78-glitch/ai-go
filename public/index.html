@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="스마트대국">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>스마트 대국</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;color:#e0e0e0}
+
+/* 헤더 */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:rgba(0,0,0,.4);
+  border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;
+}
+.hdr-title{font-size:18px;color:#f5e6c8;letter-spacing:4px;font-weight:700}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.user-info{display:flex;flex-direction:column;align-items:flex-end}
+.user-nick{font-size:13px;color:#f5e6c8;font-weight:700}
+.user-rank{font-size:11px;color:#d4a056}
+.btn-icon{
+  background:none;border:none;cursor:pointer;
+  font-size:22px;padding:4px;color:#7a8a9a;line-height:1;
+}
+
+/* 탭바 */
+.tabs{
+  display:flex;background:rgba(0,0,0,.3);
+  border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;
+}
+.tab{
+  flex:1;padding:10px 0;text-align:center;font-size:12px;color:#6a7a8a;
+  border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;font-family:inherit;
+  background:none;border-left:none;border-right:none;border-top:none;
+}
+.tab.active{color:#d4a056;border-bottom-color:#d4a056}
+
+/* 스크롤 본문 */
+.body{flex:1;overflow-y:auto;padding:14px 14px 80px;display:flex;flex-direction:column;gap:10px}
+.page{display:none;flex-direction:column;gap:10px}
+.page.active{display:flex}
+
+/* 섹션 라벨 */
+.sec-label{
+  font-size:11px;color:#6a7a8a;letter-spacing:1px;
+  padding:8px 2px 4px;border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+/* 방 카드 */
+.room-card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;active:background:rgba(255,255,255,.1);
+}
+.room-card:active{background:rgba(255,255,255,.09)}
+.room-ico{
+  width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.room-ico.waiting{background:rgba(230,126,34,.15);border:1px solid rgba(230,126,34,.3)}
+.room-ico.playing{background:rgba(39,174,96,.12);border:1px solid rgba(39,174,96,.25)}
+.room-ico.ended{background:rgba(100,100,100,.12);border:1px solid rgba(100,100,100,.2)}
+.room-body{flex:1;min-width:0}
+.room-title{font-size:14px;color:#f5e6c8;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-sub{display:flex;flex-wrap:wrap;gap:6px;margin-top:3px}
+.room-sub span{font-size:11px;color:#7a8a9a}
+.room-sub .players{color:#b0bac4}
+.room-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.badge.waiting{background:rgba(230,126,34,.2);color:#e67e22;border:1px solid rgba(230,126,34,.3)}
+.badge.playing{background:rgba(39,174,96,.2);color:#27ae60;border:1px solid rgba(39,174,96,.3)}
+.badge.ended{background:rgba(100,100,100,.2);color:#888;border:1px solid rgba(100,100,100,.25)}
+.btn-enter{
+  padding:6px 14px;border:none;border-radius:6px;cursor:pointer;
+  font-size:12px;font-family:inherit;font-weight:700;
+}
+.btn-enter.enter{background:linear-gradient(135deg,#d4a056,#b8860b);color:#1a1a2e}
+.btn-enter.watch{background:rgba(52,152,219,.2);color:#3498db;border:1px solid rgba(52,152,219,.3)}
+.btn-enter.kibo{background:rgba(100,100,100,.2);color:#aaa;border:1px solid rgba(100,100,100,.25);text-decoration:none;display:inline-flex;align-items:center}
+
+/* 빈 상태 */
+.empty{text-align:center;padding:50px 20px;color:#4a5a6a}
+.empty .icon{font-size:40px;margin-bottom:12px;opacity:.4}
+.empty p{font-size:13px;line-height:1.8}
+
+/* 온라인 유저 */
+.online-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.03);
+}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.lobby{background:#27ae60}
+.dot.playing{background:#f39c12}
+.dot.spectating{background:#3498db}
+.dot.guest{background:#95a5a6}
+.o-nick{font-size:13px;color:#d0d8e0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.o-rank{font-size:11px;color:#d4a056}
+.o-status{font-size:10px}
+.o-status.lobby{color:#27ae60}
+.o-status.playing{color:#f39c12}
+.o-status.spectating{color:#3498db}
+
+/* FAB — 방 만들기 버튼 */
+.fab{
+  position:fixed;bottom:20px;right:20px;z-index:50;
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,#d4a056,#b8860b);
+  color:#1a1a2e;font-size:28px;font-weight:700;
+  border:none;cursor:pointer;
+  box-shadow:0 4px 16px rgba(212,160,86,.5);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s;
+}
+.fab:active{transform:scale(.92)}
+
+/* 모달 */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  align-items:flex-end;justify-content:center;
+}
+.overlay.show{display:flex}
+.modal{
+  background:#16213e;border:1px solid rgba(255,255,255,.1);
+  border-radius:20px 20px 0 0;padding:24px 20px 36px;
+  width:100%;max-width:500px;
+}
+.modal h3{font-size:17px;color:#f5e6c8;margin-bottom:20px;text-align:center}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:11px;color:#7a8a9a;margin-bottom:4px}
+.form-row input,.form-row select{
+  width:100%;background:rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.12);border-radius:8px;
+  padding:10px 12px;color:#e0e0e0;font-size:15px;font-family:inherit;outline:none;
+}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.modal-btns{display:flex;gap:10px;margin-top:20px}
+.modal-btns button{
+  flex:1;padding:13px;border:none;border-radius:10px;cursor:pointer;
+  font-size:15px;font-weight:700;font-family:inherit;
+}
+.btn-ok{background:linear-gradient(135deg,#d4a056,#b8860b);color:#1a1a2e}
+.btn-cancel{background:rgba(255,255,255,.08);color:#888}
+</style>
+</head>
+<body style="display:flex;flex-direction:column">
+
+<!-- 헤더 -->
+<div class="hdr">
+  <div class="hdr-title">바 둑</div>
+  <div class="hdr-right">
+    <div class="user-info">
+      <span class="user-nick" id="hdr-nick">—</span>
+      <span class="user-rank" id="hdr-rank"></span>
+    </div>
+    <button class="btn-icon" onclick="logout()" title="로그아웃">⏻</button>
+  </div>
+</div>
+
+<!-- 탭 -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('rooms')">🏠 대국방</button>
+  <button class="tab" onclick="showTab('records')">📋 최근 기보</button>
+  <button class="tab" id="tab-online" onclick="showTab('online')">👥 온라인 <span id="online-count" style="color:#27ae60">0</span></button>
+</div>
+
+<!-- 본문 -->
+<div class="body">
+  <!-- 대국방 탭 -->
+  <div class="page active" id="page-rooms">
+    <div id="room-grid">
+      <div class="empty"><div class="icon">♟</div><p>대국방이 없습니다</p></div>
+    </div>
+  </div>
+
+  <!-- 최근 기보 탭 -->
+  <div class="page" id="page-records">
+    <div id="recent-games">
+      <div class="empty"><p style="font-size:13px">불러오는 중…</p></div>
+    </div>
+  </div>
+
+  <!-- 온라인 탭 -->
+  <div class="page" id="page-online">
+    <div id="online-list">
+      <div class="empty"><p style="font-size:13px">접속자 없음</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()" title="방 만들기">＋</button>
+
+<!-- 방 만들기 모달 -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <h3>새 대국방 만들기</h3>
+    <div class="form-row">
+      <label>방 제목</label>
+      <input type="text" id="m-title" placeholder="비우면 자동 생성" maxlength="30">
+    </div>
+    <div class="form-row">
+      <label>설정</label>
+      <div class="row3">
+        <select id="m-size">
+          <option value="19">19×19</option>
+          <option value="13">13×13</option>
+          <option value="9">9×9</option>
+        </select>
+        <select id="m-komi">
+          <option value="6.5">덤 6.5</option>
+          <option value="7.5">덤 7.5</option>
+          <option value="0">덤 0</option>
+        </select>
+        <select id="m-time">
+          <option value="600">10분</option>
+          <option value="300">5분</option>
+          <option value="1200">20분</option>
+          <option value="0">무제한</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-ok" onclick="createRoom()">방 만들기</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// 서비스워커 등록
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+let me = null;
+const socket = io();
+let onlineMap = {};
+let currentTab = 'rooms';
+
+// 세션 확인
+fetch('/auth/me').then(r=>r.json()).then(d=>{
+  if (!d.ok) return location.href='/login.html';
+  me = d.user;
+  document.getElementById('hdr-nick').textContent = me.nick;
+  document.getElementById('hdr-rank').textContent = me.isGuest ? '게스트' : me.rank;
+  socket.emit('join-lobby');
+  fetchRecentGames();
+});
+
+// ── 탭 ──
+function showTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['rooms','records','online'][i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+// ── 소켓 ──
+socket.on('online-users-list', list => { onlineMap={}; list.forEach(u=>onlineMap[u.nick]=u); renderOnline(); });
+socket.on('user-online',  u => { onlineMap[u.nick]=u; renderOnline(); });
+socket.on('user-offline', u => { delete onlineMap[u.nick]; renderOnline(); });
+socket.on('user-status',  u => { if(onlineMap[u.nick]) onlineMap[u.nick].status=u.status; renderOnline(); });
+socket.on('online-count', n => document.getElementById('online-count').textContent=n);
+socket.on('room-list',         list => renderRooms(list));
+socket.on('room-created',      ({roomId}) => location.href=`/room.html?id=${roomId}`);
+socket.on('room-error',        msg => alert(msg));
+socket.on('game-record-added', fetchRecentGames);
+
+// ── 온라인 유저 ──
+function renderOnline() {
+  const users = Object.values(onlineMap);
+  document.getElementById('online-count').textContent = users.length;
+  const el = document.getElementById('online-list');
+  if (!users.length) {
+    el.innerHTML = '<div class="empty"><p style="font-size:13px">접속자 없음</p></div>';
+    return;
+  }
+  el.innerHTML = users.map(u => {
+    const dotCls = u.isGuest ? 'guest' : u.status;
+    const sLabel = {lobby:'로비',playing:'대국중',spectating:'관전중'}[u.status]||u.status;
+    return `<div class="online-item">
+      <div class="dot ${dotCls}"></div>
+      <div class="o-nick">${esc(u.nick)}</div>
+      <div class="o-status ${u.status}">${sLabel}</div>
+      <div class="o-rank">${esc(u.rank||'')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── 방 목록 ──
+function renderRooms(list) {
+  const el = document.getElementById('room-grid');
+  const waiting = list.filter(r => r.status==='waiting');
+  const active  = list.filter(r => r.status!=='waiting');
+
+  if (!waiting.length && !active.length) {
+    el.innerHTML = '<div class="empty"><div class="icon">♟</div><p>진행 중인 대국이 없습니다<br>＋ 버튼으로 방을 만드세요</p></div>';
+    return;
+  }
+  let html = '';
+  if (waiting.length) {
+    html += `<div class="sec-label">🟡 신규 대국실 (${waiting.length})</div>`;
+    html += waiting.map(roomCard).join('');
+  }
+  if (active.length) {
+    html += `<div class="sec-label">⚔ 대국 중 (${active.length})</div>`;
+    html += active.map(roomCard).join('');
+  }
+  el.innerHTML = html;
+}
+
+function roomCard(r) {
+  const ico   = {waiting:'⏳',playing:'⚔'}[r.status]||'●';
+  const label = {waiting:'대기중',playing:'대국중'}[r.status]||r.status;
+  const players = r.black
+    ? (r.white ? `⚫ ${esc(r.black)} vs ⚪ ${esc(r.white)}` : `⚫ ${esc(r.black)} vs ?`)
+    : '대기중';
+  const canEnter = r.status==='waiting' && (!r.black||!r.white);
+  const btn = canEnter
+    ? `<button class="btn-enter enter" onclick="joinRoom('${r.id}',event)">입장</button>`
+    : `<button class="btn-enter watch" onclick="joinRoom('${r.id}',event)">관전</button>`;
+  return `<div class="room-card" onclick="joinRoom('${r.id}')">
+    <div class="room-ico ${r.status}">${ico}</div>
+    <div class="room-body">
+      <div class="room-title">${esc(r.title)}</div>
+      <div class="room-sub">
+        <span>${r.size}×${r.size}</span>
+        <span class="players">${players}</span>
+        ${r.moveCount?`<span>${r.moveCount}수`:''}
+      </div>
+    </div>
+    <div class="room-right">
+      <span class="badge ${r.status}">${label}</span>
+      ${btn}
+    </div>
+  </div>`;
+}
+
+function joinRoom(id, e) {
+  if (e) e.stopPropagation();
+  location.href = `/room.html?id=${id}`;
+}
+
+// ── 최근 기보 ──
+async function fetchRecentGames() {
+  try {
+    const res = await fetch('/api/recent-games?limit=20');
+    const data = await res.json();
+    if (data.ok) renderRecentGames(data.games);
+  } catch(e) {}
+}
+
+function renderRecentGames(games) {
+  const el = document.getElementById('recent-games');
+  if (!games.length) {
+    el.innerHTML = '<div class="empty"><p style="font-size:13px">종료된 대국이 없습니다</p></div>';
+    return;
+  }
+  el.innerHTML = games.map(g => {
+    const title = g.title || `${g.black_nick} vs ${g.white_nick}`;
+    const endedStr = g.ended_at
+      ? new Date(g.ended_at.replace(' ','T')+'Z').toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '';
+    return `<div class="room-card">
+      <div class="room-ico ended">✓</div>
+      <div class="room-body">
+        <div class="room-title">${esc(title)}</div>
+        <div class="room-sub">
+          <span>${g.board_size}×${g.board_size}</span>
+          <span class="players">⚫${esc(g.black_nick)} vs ⚪${esc(g.white_nick)}</span>
+          ${g.total_moves?`<span>${g.total_moves}수</span>`:''}
+          ${g.result?`<span style="color:#aaa">${esc(g.result)}</span>`:''}
+          ${endedStr?`<span style="color:#5a6a7a">${endedStr}</span>`:''}
+        </div>
+      </div>
+      <div class="room-right">
+        <span class="badge ended">종료</span>
+        <a class="btn-enter kibo" href="/sgf/${g.id}" download onclick="event.stopPropagation()">기보↓</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 방 만들기 ──
+function openModal() { document.getElementById('modal').classList.add('show'); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+document.getElementById('modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+
+function createRoom() {
+  socket.emit('create-room', {
+    title:    document.getElementById('m-title').value.trim(),
+    size:     +document.getElementById('m-size').value,
+    komi:     +document.getElementById('m-komi').value,
+    mainTime: +document.getElementById('m-time').value,
+  });
+  closeModal();
+}
+
+async function logout() {
+  await fetch('/auth/logout', { method:'POST' });
+  location.href = '/login.html';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
