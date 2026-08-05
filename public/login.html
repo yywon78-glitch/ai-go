@@ -220,6 +220,10 @@ document.addEventListener('keydown', e => {
   else if (document.getElementById('panel-register').classList.contains('active')) doRegister();
   else doGuest();
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
