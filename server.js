@@ -15,6 +15,7 @@ const {
 
 // ─── 초기화 ───────────────────────────────────────────────
 const app    = express();
+app.set('trust proxy', 1);  // Railway 리버스 프록시 신뢰 (세션 쿠키 HTTPS 동작)
 const server = http.createServer(app);
 const io      = new Server(server, { cors: { origin: process.env.CORS_ORIGIN || '*' } });
 const PORT    = process.env.PORT || 3100;
