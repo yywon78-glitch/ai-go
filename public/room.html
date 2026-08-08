@@ -42,38 +42,44 @@ body{
 
 /* ── 플레이어 스트립 (항상 표시) ── */
 .player-strip{
-  display:flex;                        /* 기본: 항상 표시 */
-  align-items:stretch;flex-shrink:0;
-  background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.06);
-  min-height:70px;
+  display:flex;align-items:stretch;flex-shrink:0;
+  background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.07);
+  height:52px;
 }
+/* 좌우 플레이어 카드 */
 .ps-card{
-  flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;
-  position:relative;transition:background .2s;
+  flex:0 0 42%;display:flex;align-items:center;gap:6px;
+  padding:5px 10px;transition:background .2s;overflow:hidden;
 }
-.ps-card.active{background:rgba(212,160,86,.1)}
-.ps-card.right{flex-direction:row-reverse;text-align:right}
-.ps-stone{
-  width:36px;height:36px;border-radius:50%;flex-shrink:0;
-}
+.ps-card.active{background:rgba(212,160,86,.12)}
+.ps-card.right{flex-direction:row-reverse}
+.ps-stone{width:26px;height:26px;border-radius:50%;flex-shrink:0;}
 .ps-stone.black{background:radial-gradient(circle at 34% 30%,#6f6f6f,#0a0a0a 72%)}
 .ps-stone.white{background:radial-gradient(circle at 34% 30%,#fff,#d0d0d0 78%);border:1px solid #999}
-.ps-info{flex:1;min-width:0}
-.ps-nick{font-size:13px;font-weight:700;color:#f5e6c8;
+.ps-info{flex:1;min-width:0;}
+.ps-nick{font-size:11px;font-weight:700;color:#f5e6c8;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ps-rank{font-size:10px;color:#d4a056}
+.ps-cap{font-size:9px;color:#6a7a8a;margin-top:2px}
 .ps-timer{
-  font-size:20px;font-weight:700;font-family:'Consolas',monospace;
-  color:#f5e6c8;
+  font-size:15px;font-weight:700;font-family:'Consolas',monospace;
+  color:#c8d0d8;flex-shrink:0;min-width:36px;text-align:center;
 }
 .ps-timer.low{color:#e74c3c;animation:blink .8s step-end infinite}
 @keyframes blink{50%{opacity:.3}}
-.ps-cap{font-size:10px;color:#7a8a9a}
-.ps-divider{
-  width:1px;background:rgba(255,255,255,.07);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;padding:8px 4px;
-  color:#6a7a8a;font-size:11px;font-weight:700;writing-mode:horizontal-tb;
+/* 가운데 정보 패널 */
+.ps-center{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1px;padding:4px 8px;
+  border-left:1px solid rgba(255,255,255,.07);
+  border-right:1px solid rgba(255,255,255,.07);
+  overflow:hidden;min-width:0;
 }
+.ps-c-title{font-size:9px;color:#5a6a7a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ps-c-move{font-size:16px;font-weight:800;color:#f5e6c8;line-height:1}
+.ps-c-status{font-size:10px;color:#7a8a9a;white-space:nowrap}
+.ps-c-status.black-turn{color:#8ac0f8;font-weight:700}
+.ps-c-status.white-turn{color:#e8c87a;font-weight:700}
+.ps-c-status.urgent{color:#e74c3c;font-weight:800;animation:blink .8s step-end infinite}
 
 /* ── 메인 영역 ────────────────────────────────────── */
 .main{
@@ -349,8 +355,12 @@ body{
     </div>
     <div class="ps-timer" id="ps-timer-black">—</div>
   </div>
-  <!-- 구분선 -->
-  <div class="ps-divider" id="ps-move-count">0수</div>
+  <!-- 가운데 정보 -->
+  <div class="ps-center">
+    <div class="ps-c-title" id="ps-c-title">—</div>
+    <div class="ps-c-move" id="ps-move-count">—</div>
+    <div class="ps-c-status" id="ps-c-status">대기중</div>
+  </div>
   <!-- 백 -->
   <div class="ps-card right" id="ps-white">
     <div class="ps-stone white"></div>
@@ -838,21 +848,21 @@ function applySnap(s) {
 function calcCellSize() {
   const mobile = isMobile();
   const hdrH   = 46;
-  const stripH = mobile ? 70 : 0;
-  const scoreH = mobile && showTerr ? 80 : 0;
+  const stripH = 52;                   // 플레이어 스트립 항상 표시
+  const scoreH = showTerr ? 52 : 0;
   const ctrlH  = 56;
-  const boardPad = mobile ? 24 : 28;   // board-wrap padding × 2
-  const innerPad = mobile ? 20 : 24;   // board-inner padding × 2
+  const boardPad = mobile ? 20 : 24;
+  const innerPad = mobile ? 16 : 20;
 
-  const availH = window.innerHeight - hdrH - stripH - scoreH - ctrlH - boardPad - innerPad - 20;
-  const availW = window.innerWidth - (mobile ? 0 : 220) - boardPad - innerPad - 20;
+  const availH = window.innerHeight - hdrH - stripH - scoreH - ctrlH - boardPad - innerPad - 8;
+  const availW = window.innerWidth - boardPad - innerPad - 8;  // 우측 패널 없음
 
   cellSize = Math.min(
     Math.floor(availH / boardSize),
     Math.floor(availW / boardSize),
-    mobile ? 30 : 36
+    mobile ? 38 : 52   // 최대 셀 크기 확대
   );
-  cellSize = Math.max(cellSize, mobile ? 14 : 16);
+  cellSize = Math.max(cellSize, mobile ? 16 : 20);
 }
 
 function getStars(sz) {
@@ -1154,11 +1164,34 @@ function updatePlayers(players) {
     document.getElementById('dp-white-rank').textContent = players.white?.rank || '';
   }
   // 따낸 돌 + 수 수
-  document.getElementById('ps-black-cap-lbl').textContent = `따낸 돌 ${capturedB}`;
-  document.getElementById('ps-white-cap-lbl').textContent = `따낸 돌 ${capturedW}`;
-  document.getElementById('ps-move-count').textContent   = `${moveCount}수`;
-  document.getElementById('dp-black-cap').textContent    = `따낸 돌: ${capturedB}`;
-  document.getElementById('dp-white-cap').textContent    = `따낸 돌: ${capturedW}  덤: ${komi}`;
+  document.getElementById('ps-black-cap-lbl').textContent = `따낸 ${capturedB}`;
+  document.getElementById('ps-white-cap-lbl').textContent = `따낸 ${capturedW}`;
+  document.getElementById('dp-black-cap').textContent    = `따낸: ${capturedB}`;
+  document.getElementById('dp-white-cap').textContent    = `따낸: ${capturedW}`;
+  updateCenter();
+}
+
+function updateCenter() {
+  const titleEl  = document.getElementById('ps-c-title');
+  const moveEl   = document.getElementById('ps-move-count');
+  const statusEl = document.getElementById('ps-c-status');
+  if (!titleEl) return;
+  // 방 제목
+  titleEl.textContent = document.getElementById('room-title').textContent || '대국실';
+  // 수순
+  moveEl.textContent = moveCount > 0 ? moveCount + '수' : '대기';
+  // 상태
+  if (phase === 'waiting') {
+    statusEl.textContent = '입장 대기중';
+    statusEl.className = 'ps-c-status';
+  } else if (phase === 'playing') {
+    const isBlack = currentPlayer === 'black';
+    statusEl.textContent = isBlack ? '⚫ 흑 차례' : '⚪ 백 차례';
+    statusEl.className = 'ps-c-status ' + (isBlack ? 'black-turn' : 'white-turn');
+  } else {
+    statusEl.textContent = '대국 종료';
+    statusEl.className = 'ps-c-status';
+  }
 }
 
 function updateTimer(color, sec, active) {
@@ -1182,6 +1215,16 @@ function fmt(sec) {
   if (sec == null) return '—';
   if (sec <= 0) return '0:00';
   return `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+}
+
+function updateTimerCenter(blackSec, whiteSec) {
+  const statusEl = document.getElementById('ps-c-status');
+  if (!statusEl || phase !== 'playing') return;
+  const activeSec = currentPlayer === 'black' ? blackSec : whiteSec;
+  if (activeSec != null && activeSec <= 30 && activeSec > 0) {
+    statusEl.textContent = (currentPlayer === 'black' ? '⚫ ' : '⚪ ') + activeSec + '초!';
+    statusEl.className = 'ps-c-status urgent';
+  }
 }
 
 // ──────────────────────────────────────────────────────────
