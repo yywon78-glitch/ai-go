@@ -193,12 +193,8 @@ body{
 .btn-chat{background:rgba(255,255,255,.12);color:#c8d0d8;border:1px solid rgba(255,255,255,.15)}
 .ctrl-msg{font-size:13px;color:#d4a056;font-weight:700;text-align:center}
 
-/* ── 우측 패널 (데스크탑 고정, 모바일 슬라이드업) ─── */
-.side-panel{
-  width:220px;flex-shrink:0;display:flex;flex-direction:column;
-  background:rgba(0,0,0,.3);border-left:1px solid rgba(255,255,255,.06);
-  overflow:hidden;
-}
+/* ── 우측 패널 — 완전 제거 ─── */
+.side-panel{ display:none !important; }
 .chat-area{
   flex:1;display:flex;flex-direction:column;padding:10px;gap:6px;min-height:0;
 }
@@ -299,9 +295,7 @@ body{
   /* 데스크탑도 상단 플레이어 스트립 사용 — 우측 패널 플레이어 카드 숨김 */
   .desktop-player,.desktop-score{display:none !important}
   .board-area{padding:12px 12px 68px}
-  .side-panel{display:flex}
-  .chat-overlay{display:none !important}
-  .btn-chat{display:none}
+  /* 채팅은 오버레이 버튼으로만 — 우측 패널 없음 */
   /* 데스크탑용 플레이어 카드 (side panel 상단) */
   .desktop-player{
     background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.06);
@@ -329,7 +323,6 @@ body{
 
 /* ── 모바일 (< 769px) ─────────────────────────────── */
 @media (max-width:768px) {
-  .side-panel{display:none}
   .score-strip{display:none}             /* JS로 .show 토글 */
 }
 </style>
