@@ -78,7 +78,7 @@ input::placeholder{color:#4a5a6a}
 <div class="wrap">
   <div class="logo">
     <h1>바 둑</h1>
-    <p>스마트 대국</p>
+    <p>스마트 대국 <span style="font-size:11px;color:#7a8a9a;letter-spacing:1px">v1.3</span></p>
   </div>
 
   <div class="card">
@@ -143,6 +143,12 @@ input::placeholder{color:#4a5a6a}
 // 파일로 직접 열어도 동작하도록 서버 주소 자동 감지
 // file:// → http://localhost:3100 사용 / http:// → 상대경로 사용
 const SERVER = location.protocol === 'file:' ? 'http://localhost:3100' : '';
+
+// 이미 로그인된 회원이면 자동으로 로비로
+fetch(SERVER + '/auth/me', { credentials: 'include' })
+  .then(r => r.json())
+  .then(d => { if (d.ok) location.href = SERVER + '/'; })
+  .catch(() => {});
 
 function showTab(name) {
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['login','register','guest'][i]===name));

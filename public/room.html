@@ -40,9 +40,9 @@ body{
   background:rgba(255,255,255,.1);color:#c8d0d8;flex-shrink:0;
 }
 
-/* ── 플레이어 스트립 (모바일 전용 — 데스크탑 기본 hidden) ── */
+/* ── 플레이어 스트립 (항상 표시) ── */
 .player-strip{
-  display:none;                        /* 기본: 숨김 */
+  display:flex;                        /* 기본: 항상 표시 */
   align-items:stretch;flex-shrink:0;
   background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.06);
   min-height:70px;
@@ -295,8 +295,9 @@ body{
 /* ── 데스크탑 (≥ 769px) ───────────────────────────── */
 @media (min-width:769px) {
   html,body{overflow:hidden}
-  /* .player-strip은 기본값 none이므로 여기서 별도 설정 불필요 */
   .main{overflow:hidden}
+  /* 데스크탑도 상단 플레이어 스트립 사용 — 우측 패널 플레이어 카드 숨김 */
+  .desktop-player,.desktop-score{display:none !important}
   .board-area{padding:12px 12px 68px}
   .side-panel{display:flex}
   .chat-overlay{display:none !important}
@@ -328,10 +329,8 @@ body{
 
 /* ── 모바일 (< 769px) ─────────────────────────────── */
 @media (max-width:768px) {
-  .player-strip{display:flex}            /* 모바일에서만 표시 */
   .side-panel{display:none}
   .score-strip{display:none}             /* JS로 .show 토글 */
-  .desktop-player,.desktop-score{display:none}
 }
 </style>
 </head>
@@ -340,6 +339,7 @@ body{
 <!-- 헤더 -->
 <div class="hdr">
   <div class="title" id="room-title">대국방</div>
+  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v1.3</span>
   <div class="role-badge spectator" id="role-badge">관전</div>
   <button class="hdr-btn" onclick="goLobby()">← 로비</button>
 </div>

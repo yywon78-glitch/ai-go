@@ -184,6 +184,7 @@ app.get('/api/recent-games', (req, res) => {
 
 // ─── 인메모리 상태 ────────────────────────────────────────
 const rooms      = new Map();   // roomId → room
+let   roomCounter = 0;           // 대국실 자동 순번
 const onlineUsers = new Map();  // socketId → userInfo
 
 // ─── SOCKET ──────────────────────────────────────────────
@@ -218,7 +219,7 @@ io.on('connection', (socket) => {
 
     rooms.set(roomId, {
       id: roomId,
-      title: (opts.title || `${u.nick}의 대국`).slice(0, 30),
+      title: `대국실 ${++roomCounter}번`,
       size, komi, mainTime,
       game: createGame(size, komi),
       players: { black: null, white: null },

@@ -108,18 +108,18 @@ html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Got
 .o-status.playing{color:#f39c12}
 .o-status.spectating{color:#3498db}
 
-/* FAB — 방 만들기 버튼 */
-.fab{
-  position:fixed;bottom:20px;right:20px;z-index:50;
-  width:56px;height:56px;border-radius:50%;
-  background:linear-gradient(135deg,#d4a056,#b8860b);
-  color:#1a1a2e;font-size:28px;font-weight:700;
-  border:none;cursor:pointer;
-  box-shadow:0 4px 16px rgba(212,160,86,.5);
-  display:flex;align-items:center;justify-content:center;
-  transition:transform .15s;
+/* 대국실 만들기 버튼 바 */
+.create-bar{
+  flex-shrink:0;padding:8px 14px;
+  background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.07);
 }
-.fab:active{transform:scale(.92)}
+.btn-create{
+  width:100%;padding:11px;border:none;border-radius:10px;cursor:pointer;
+  font-size:15px;font-weight:700;font-family:inherit;
+  background:linear-gradient(135deg,#d4a056,#b8860b);color:#1a1a2e;
+  transition:filter .15s;
+}
+.btn-create:active{filter:brightness(.9)}
 
 /* 모달 */
 .overlay{
@@ -155,7 +155,7 @@ html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Got
 
 <!-- 헤더 -->
 <div class="hdr">
-  <div class="hdr-title">바 둑</div>
+  <div class="hdr-title">바 둑 <span style="font-size:11px;color:#7a8a9a;letter-spacing:1px;font-weight:400">v1.3</span></div>
   <div class="hdr-right">
     <div class="user-info">
       <span class="user-nick" id="hdr-nick">—</span>
@@ -163,6 +163,11 @@ html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Got
     </div>
     <button class="btn-icon" onclick="logout()" title="로그아웃">⏻</button>
   </div>
+</div>
+
+<!-- 대국실 만들기 버튼 -->
+<div class="create-bar">
+  <button class="btn-create" onclick="openModal()">＋ 대국실 만들기</button>
 </div>
 
 <!-- 탭 -->
@@ -196,17 +201,10 @@ html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Got
   </div>
 </div>
 
-<!-- FAB -->
-<button class="fab" onclick="openModal()" title="방 만들기">＋</button>
-
-<!-- 방 만들기 모달 -->
+<!-- 대국실 설정 모달 -->
 <div class="overlay" id="modal">
   <div class="modal">
-    <h3>새 대국방 만들기</h3>
-    <div class="form-row">
-      <label>방 제목</label>
-      <input type="text" id="m-title" placeholder="비우면 자동 생성" maxlength="30">
-    </div>
+    <h3>대국실 설정</h3>
     <div class="form-row">
       <label>설정</label>
       <div class="row3">
@@ -306,7 +304,7 @@ function renderRooms(list) {
   const active  = list.filter(r => r.status!=='waiting');
 
   if (!waiting.length && !active.length) {
-    el.innerHTML = '<div class="empty"><div class="icon">♟</div><p>진행 중인 대국이 없습니다<br>＋ 버튼으로 방을 만드세요</p></div>';
+    el.innerHTML = '<div class="empty"><div class="icon">♟</div><p>진행 중인 대국이 없습니다<br>위 버튼으로 대국실을 만드세요</p></div>';
     return;
   }
   let html = '';
@@ -400,7 +398,6 @@ document.getElementById('modal').addEventListener('click', e => { if(e.target===
 
 function createRoom() {
   socket.emit('create-room', {
-    title:    document.getElementById('m-title').value.trim(),
     size:     +document.getElementById('m-size').value,
     komi:     +document.getElementById('m-komi').value,
     mainTime: +document.getElementById('m-time').value,
