@@ -108,18 +108,16 @@ html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Got
 .o-status.playing{color:#f39c12}
 .o-status.spectating{color:#3498db}
 
-/* 대국실 만들기 버튼 바 */
-.create-bar{
-  flex-shrink:0;padding:8px 14px;
-  background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.07);
-}
+/* 대국실 만들기 — 하단 고정 작은 버튼 */
 .btn-create{
-  width:100%;padding:11px;border:none;border-radius:10px;cursor:pointer;
-  font-size:15px;font-weight:700;font-family:inherit;
+  position:fixed;bottom:16px;right:16px;z-index:50;
+  padding:9px 18px;border:none;border-radius:20px;cursor:pointer;
+  font-size:13px;font-weight:700;font-family:inherit;
   background:linear-gradient(135deg,#d4a056,#b8860b);color:#1a1a2e;
-  transition:filter .15s;
+  box-shadow:0 3px 12px rgba(212,160,86,.4);
+  transition:transform .12s,filter .12s;
 }
-.btn-create:active{filter:brightness(.9)}
+.btn-create:active{transform:scale(.94);filter:brightness(.9)}
 
 /* 모달 */
 .overlay{
@@ -165,17 +163,15 @@ html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Got
   </div>
 </div>
 
-<!-- 대국실 만들기 버튼 -->
-<div class="create-bar">
-  <button class="btn-create" onclick="openModal()">＋ 대국실 만들기</button>
-</div>
-
 <!-- 탭 -->
 <div class="tabs">
   <button class="tab active" onclick="showTab('rooms')">🏠 대국방</button>
   <button class="tab" onclick="showTab('records')">📋 최근 기보</button>
   <button class="tab" id="tab-online" onclick="showTab('online')">👥 온라인 <span id="online-count" style="color:#27ae60">0</span></button>
 </div>
+
+<!-- 하단 고정 버튼 -->
+<button class="btn-create" onclick="openModal()">＋ 대국실 만들기</button>
 
 <!-- 본문 -->
 <div class="body">
@@ -206,7 +202,7 @@ html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Got
   <div class="modal">
     <h3>대국실 설정</h3>
     <div class="form-row">
-      <label>설정</label>
+      <label>바둑판 · 덤 · 제한시간</label>
       <div class="row3">
         <select id="m-size">
           <option value="19">19×19</option>
@@ -223,6 +219,17 @@ html,body{height:100%;overflow:hidden;background:#1a1a2e;font-family:'Malgun Got
           <option value="300">5분</option>
           <option value="1200">20분</option>
           <option value="0">무제한</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>초읽기 (착수당)</label>
+      <div class="row3" style="grid-template-columns:repeat(4,1fr)">
+        <select id="m-byoyomi" style="grid-column:1/5">
+          <option value="30">30초</option>
+          <option value="60">60초</option>
+          <option value="20">20초</option>
+          <option value="10">10초</option>
         </select>
       </div>
     </div>
@@ -401,6 +408,7 @@ function createRoom() {
     size:     +document.getElementById('m-size').value,
     komi:     +document.getElementById('m-komi').value,
     mainTime: +document.getElementById('m-time').value,
+    byoyomi:  +document.getElementById('m-byoyomi').value,
   });
   closeModal();
 }

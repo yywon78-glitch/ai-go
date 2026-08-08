@@ -214,19 +214,21 @@ io.on('connection', (socket) => {
     if (!u) return;
     const size     = [9, 13, 19].includes(opts.size) ? opts.size : 19;
     const komi     = [0, 6.5, 7.5].includes(opts.komi) ? opts.komi : 6.5;
-    const mainTime = Math.min(Math.max(opts.mainTime || 600, 60), 3600);
+    const mainTime = Math.min(Math.max(opts.mainTime || 600, 0), 3600);
+    const byoyomi  = [10, 20, 30, 60].includes(opts.byoyomi) ? opts.byoyomi : 30;
     const roomId   = uuid();
 
     rooms.set(roomId, {
       id: roomId,
       title: `대국실 ${++roomCounter}번`,
-      size, komi, mainTime,
+      size, komi, mainTime, byoyomi,
       game: createGame(size, komi),
       players: { black: null, white: null },
       spectators: [],
       chat: [],
       status: 'waiting',
-      timers: { black: mainTime, white: mainTime },
+      timers: { black: mainTime || byoyomi, white: mainTime || byoyomi },
+      inByoyomi: { black: !mainTime, white: !mainTime },
       timerInterval: null,
       createdAt: Date.now(),
       endedAt: null,
@@ -575,11 +577,20 @@ function startTimer(room) {
     if (room.status !== 'playing') { stopTimer(room); return; }
     const p = room.game.currentPlayer;
     room.timers[p] = Math.max(0, room.timers[p] - 1);
+
+    // 주시간 소진 → 초읽기 전환
+    if (room.timers[p] === 0 && !room.inByoyomi[p] && room.byoyomi > 0) {
+      room.inByoyomi[p] = true;
+      room.timers[p] = room.byoyomi;
+    }
+
     io.to(room.id).emit('timer-tick', {
       black: room.timers.black,
       white: room.timers.white,
       active: p,
+      inByoyomi: { ...room.inByoyomi },
     });
+
     if (room.timers[p] === 0) {
       stopTimer(room);
       const winner = p === 'black' ? 'white' : 'black';
@@ -594,8 +605,18 @@ function stopTimer(room) {
   if (room.timerInterval) { clearInterval(room.timerInterval); room.timerInterval = null; }
 }
 
-function resetTurnTimer(_room, _movedPlayer) {
-  // 타이머는 계속 흐름 — 향후 바요미 구현 시 여기서 처리
+function resetTurnTimer(room, movedPlayer) {
+  // 초읽기(byoyomi) 모드면 상대 타이머 리셋
+  if (room.byoyomi > 0) {
+    const next = movedPlayer === 'black' ? 'white' : 'black';
+    if (room.inByoyomi[next]) {
+      room.timers[next] = room.byoyomi;
+    }
+    // 방금 둔 플레이어가 초읽기 상태였으면 초읽기 유지 (시간 소모 안 함)
+    if (room.inByoyomi[movedPlayer]) {
+      room.timers[movedPlayer] = room.byoyomi;
+    }
+  }
 }
 
 // ─── 게임 종료 ────────────────────────────────────────────
@@ -660,7 +681,8 @@ function getRole(room, socketId) {
 function snap(room) {
   return {
     id: room.id, title: room.title, size: room.size, komi: room.komi,
-    status: room.status, mainTime: room.mainTime,
+    status: room.status, mainTime: room.mainTime, byoyomi: room.byoyomi,
+    inByoyomi: room.inByoyomi,
     players: room.players, spectators: room.spectators,
     board: room.game.board,
     currentPlayer: room.game.currentPlayer,
