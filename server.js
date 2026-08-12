@@ -63,8 +63,10 @@ app.get('/ping', (_req, res) => res.send('v1.5-착점버튼-OK'));
 app.get('/roomver', (_req, res) => {
   const p = path.join(__dirname, 'public', 'room.html');
   const html = fs.readFileSync(p, 'utf8');
-  const m = html.match(/>(v[\d.\-a-z]+)</);
-  res.send(`room.html path: ${p} | version: ${m?.[1]||'not found'} | size: ${html.length}`);
+  const ver = html.match(/flex-shrink:0"?>([^<]+)<\/span>/)?.[1] || 'NOT FOUND';
+  const hasPending = html.includes('pendingMove') ? 'YES' : 'NO';
+  const hasConfirmBtn = html.includes('place-confirm') ? 'YES' : 'NO';
+  res.send(`ver=${ver} | pendingMove=${hasPending} | place-confirm=${hasConfirmBtn} | size=${html.length}`);
 });
 app.get('/',         (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/index.html', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
