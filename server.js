@@ -59,6 +59,7 @@ app.use(sessionMw);
 io.use((socket, next) => sessionMw(socket.request, {}, next));
 
 // ─── 페이지 라우트 (세션 뒤, static 앞) ─────────────────
+app.get('/ping', (_req, res) => res.send('v1.5-착점버튼-OK'));
 app.get('/',         (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/index.html', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/room.html',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
