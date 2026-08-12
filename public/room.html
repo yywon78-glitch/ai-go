@@ -581,7 +581,6 @@ socket.on('joined-room', ({ role, snap }) => {
 socket.on('room-update', snap => applySnap(snap));
 
 socket.on('stone-placed', d => {
-socket.on('stone-placed', d => {
   board = d.board;
   currentPlayer = d.currentPlayer;
   lastMove = d.lastMove;
