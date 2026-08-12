@@ -6,9 +6,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# 소스 복사
-COPY server.js game.js db.js ./
+# 소스 복사 (public 먼저 → 캐시 독립 보장)
 COPY public/ ./public/
+COPY server.js game.js db.js ./
 
 # 데이터 디렉토리 (볼륨 마운트 대상)
 RUN mkdir -p /app/data
