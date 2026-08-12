@@ -344,7 +344,7 @@ body{
 <!-- 헤더 -->
 <div class="hdr">
   <div class="title" id="room-title">대국방</div>
-  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v1.6</span>
+  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v1.7</span>
   <div class="role-badge spectator" id="role-badge">관전</div>
   <button class="hdr-btn" onclick="goLobby()">← 로비</button>
 </div>
@@ -581,8 +581,7 @@ socket.on('joined-room', ({ role, snap }) => {
 socket.on('room-update', snap => applySnap(snap));
 
 socket.on('stone-placed', d => {
-  hidePendingOverlay();
-  clearTimeout(placeCooldownTimer); lastPlacedKey = null;
+socket.on('stone-placed', d => {
   board = d.board;
   currentPlayer = d.currentPlayer;
   lastMove = d.lastMove;
@@ -590,9 +589,10 @@ socket.on('stone-placed', d => {
   capturedW = d.capturedWhite;
   moveCount = d.moveNum;
   renderBoard();
+  hidePendingOverlay();
   updatePlayers();
   updateCtrlBar();
-  addChat({ nick:'', text:`${d.moveNum}. ${d.player==='black'?'⚫':'⚪'} ${d.coord}${d.capturedCount?` (${d.capturedCount}점)`:''}`, role:'system', time:'' });
+  addChat({ nick:'', text:d.moveNum+'. '+(d.player==='black'?'⚫':'⚪')+' '+d.coord+(d.capturedCount?' ('+d.capturedCount+'점)':''), role:'system', time:'' });
 });
 
 socket.on('pass-done', d => {
@@ -991,8 +991,9 @@ function cancelPendingMove() {
 function confirmPendingMove() {
   clearTimeout(pendingTimer); pendingTimer = null;
   if (!pendingMove) return;
-  socket.emit('place-stone', { x: pendingMove.x, y: pendingMove.y });
-  hidePendingOverlay();
+  const pos = { x: pendingMove.x, y: pendingMove.y };
+  document.getElementById('place-confirm').style.display = 'none';
+  socket.emit('place-stone', pos);
 }
 
 function showPendingOverlay(x, y) {
