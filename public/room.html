@@ -973,7 +973,7 @@ function addTouchClick(el, fn) {
 
 // ── pending move (오버레이 방식 — 보드 재렌더 없음) ────────────
 function setPendingMove(x, y) {
-  if (pendingMove && pendingMove.x===x && pendingMove.y===y) { cancelPendingMove(); return; }
+  if (pendingMove && pendingMove.x===x && pendingMove.y===y) { confirmPendingMove(); return; }
   clearTimeout(pendingTimer);
   pendingMove = { x, y };
   showPendingOverlay(x, y);
