@@ -63,10 +63,18 @@ app.get('/ping', (_req, res) => res.send('v1.5-착점버튼-OK'));
 app.get('/roomver', (_req, res) => {
   const p = path.join(__dirname, 'public', 'room.html');
   const html = fs.readFileSync(p, 'utf8');
-  const ver = html.match(/flex-shrink:0"?>([^<]+)<\/span>/)?.[1] || 'NOT FOUND';
   const hasPending = html.includes('pendingMove') ? 'YES' : 'NO';
-  const hasConfirmBtn = html.includes('place-confirm') ? 'YES' : 'NO';
-  res.send(`ver=${ver} | pendingMove=${hasPending} | place-confirm=${hasConfirmBtn} | size=${html.length}`);
+  const stat = fs.lstatSync(p);
+  const appFiles = fs.readdirSync(__dirname).join(', ');
+  const pubFiles = fs.readdirSync(path.join(__dirname, 'public')).join(', ');
+  res.send([
+    `size=${html.length}`,
+    `pendingMove=${hasPending}`,
+    `isSymlink=${stat.isSymbolicLink()}`,
+    `mtime=${stat.mtime.toISOString()}`,
+    `app/=[${appFiles}]`,
+    `app/public/=[${pubFiles}]`,
+  ].join(' | '));
 });
 app.get('/',         (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/index.html', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
