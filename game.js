@@ -312,8 +312,24 @@ function toSGF(game, players) {
   return s + ')';
 }
 
+// ─── 무르기 ──────────────────────────────────────────────
+function undoMove(game) {
+  if (game.phase !== 'playing') return { ok: false, msg: '대국 중이 아닙니다' };
+  if (game.history.length === 0) return { ok: false, msg: '무를 수 있는 수가 없습니다' };
+  const prev = game.history.pop();
+  game.board         = prev.board;
+  game.currentPlayer = prev.currentPlayer;
+  game.capturedBlack = prev.capturedBlack;
+  game.capturedWhite = prev.capturedWhite;
+  game.lastMove      = prev.lastMove;
+  game.koPoint       = prev.koPoint;
+  game.passCount     = 0;
+  if (game.moveList.length > 0) game.moveList.pop();
+  return { ok: true };
+}
+
 module.exports = {
   createGame, placeStone, passMove,
   calcScore, calcTerritory, autoSuggestDead,
-  toSGF, neighbors, getGroup,
+  toSGF, neighbors, getGroup, undoMove,
 };

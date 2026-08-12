@@ -344,7 +344,7 @@ body{
 <!-- 헤더 -->
 <div class="hdr">
   <div class="title" id="room-title">대국방</div>
-  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v1.7</span>
+  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v1.8</span>
   <div class="role-badge spectator" id="role-badge">관전</div>
   <button class="hdr-btn" onclick="goLobby()">← 로비</button>
 </div>
@@ -499,7 +499,7 @@ body{
   <div style="display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap:wrap;">
     <button class="mbtn-blue" onclick="enterReplay()">🎞 기보 확인</button>
     <button id="res-sgf-btn" class="mbtn-blue" style="display:none" onclick="downloadSGF()">⬇ SGF 저장</button>
-    <button class="mbtn-ok" onclick="dismissResult()">✕ 닫기</button>
+    <button class="mbtn-ok" onclick="dismissResult()">✔ 확인</button>
     <button class="mbtn-gray" onclick="goLobby()">← 로비로</button>
   </div>
 </div>
@@ -522,6 +522,16 @@ body{
 <div id="place-confirm" style="display:none;position:fixed;z-index:60;text-align:center">
   <button id="pcf-btn" style="display:block;position:relative;overflow:hidden;background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.55);min-height:40px" onclick="confirmPendingMove()">&#10004; &#xCC29;&#xC810;</button>
   <div id="pcf-arrow" class="pcf-arrow-d"></div>
+</div>
+<div id="undo-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:900;align-items:center;justify-content:center">
+  <div style="background:#1e2a38;border:1px solid rgba(212,160,86,.4);border-radius:16px;padding:24px 28px;text-align:center;max-width:300px;width:90%">
+    <h3 id="undo-msg" style="color:#f5e6c8;font-size:16px;margin-bottom:8px">무르기 요청</h3>
+    <p id="undo-sub" style="color:#8a9aaa;font-size:13px;margin-bottom:16px;line-height:1.5"></p>
+    <div id="undo-btns" style="display:flex;gap:10px;justify-content:center">
+      <button class="mbtn-ok" onclick="socket.emit('accept-undo')">✔ 수락</button>
+      <button class="mbtn-gray" onclick="socket.emit('reject-undo')">✘ 거절</button>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -1169,10 +1179,13 @@ function updateCtrlBar() {
     passBtn.disabled = !myTurn;
     bar.appendChild(passBtn);
 
+    const undoBtn = mkBtn('무르기', 'ctrl-btn btn-resume', () => socket.emit('request-undo'));
+    bar.appendChild(undoBtn);
+
     const scoreReqBtn = mkBtn('계가 신청', 'ctrl-btn btn-score-req', requestScore);
     bar.appendChild(scoreReqBtn);
 
-    const resignBtn = mkBtn('불계', 'ctrl-btn btn-resign', () => {
+    const resignBtn = mkBtn('기권', 'ctrl-btn btn-resign', () => {
       if(confirm('불계패 하시겠습니까?')) socket.emit('resign');
     });
     bar.appendChild(resignBtn);
@@ -1191,7 +1204,7 @@ function updateCtrlBar() {
       msg.textContent = '죽은 돌 클릭';
       bar.appendChild(msg);
       bar.appendChild(mkBtn('제출', 'ctrl-btn btn-submit', submitDead));
-      bar.appendChild(mkBtn('불계', 'ctrl-btn btn-resign', () => {
+      bar.appendChild(mkBtn('기권', 'ctrl-btn btn-resign', () => {
         if(confirm('불계패?')) socket.emit('resign');
       }));
     } else {
@@ -1345,8 +1358,42 @@ function showResult(d) {
     document.getElementById('res-sgf-btn').style.display = 'inline-block';
   }
 
-  document.getElementById('result-overlay').classList.add('show');
+  document.getElementById('result-panel').style.display='block';
 }
+
+function dismissResult() { document.getElementById('result-panel').style.display='none'; }
+
+// ── 무르기 소켓 이벤트 ─────────────────────────────────
+socket.on('undo-requested', d => {
+  if (d.requester === myRole) {
+    toast('무르기 요청을 보냈습니다. 상대 응답 대기 중...');
+  } else {
+    const ov = document.getElementById('undo-overlay');
+    document.getElementById('undo-msg').textContent = '무르기 요청';
+    document.getElementById('undo-sub').textContent = d.nick + '이(가) 무르기를 요청했습니다. 수락하시겠습니까?';
+    document.getElementById('undo-btns').style.display = 'flex';
+    ov.style.display = 'flex';
+  }
+});
+
+socket.on('undo-done', d => {
+  document.getElementById('undo-overlay').style.display = 'none';
+  board = d.board;
+  currentPlayer = d.currentPlayer;
+  capturedB = d.capturedBlack;
+  capturedW = d.capturedWhite;
+  lastMove = d.lastMove;
+  moveCount = d.moveCount;
+  renderBoard();
+  updatePlayers();
+  updateCtrlBar();
+  toast('무르기 완료');
+});
+
+socket.on('undo-rejected', () => {
+  document.getElementById('undo-overlay').style.display = 'none';
+  toast('무르기가 거절됐습니다.');
+});
 
 function downloadSGF() { window.open(`/sgf/${gameId}`, '_blank'); }
 

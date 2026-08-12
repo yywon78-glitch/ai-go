@@ -10,7 +10,7 @@ const fs       = require('fs');
 const db       = require('./db');
 const {
   createGame, placeStone, passMove,
-  calcScore, autoSuggestDead, toSGF,
+  calcScore, autoSuggestDead, toSGF, undoMove,
 } = require('./game');
 
 // ─── 초기화 ───────────────────────────────────────────────
@@ -250,6 +250,7 @@ io.on('connection', (socket) => {
       createdAt: Date.now(),
       endedAt: null,
       scoreRequest: null,
+      undoRequest: null,
       scoreConfirmed: { black: false, white: false },
       pendingScoreData: null,
     });
@@ -372,6 +373,48 @@ io.on('connection', (socket) => {
 
     const winner = role === 'black' ? 'white' : 'black';
     endGame(room, role === 'black' ? 'W+R' : 'B+R', winner, u.roomId);
+  });
+
+  // ── 무르기 ───────────────────────────────────────────
+  socket.on('request-undo', () => {
+    const u    = onlineUsers.get(socket.id);
+    const room = u?.roomId ? rooms.get(u.roomId) : null;
+    if (!room || room.status !== 'playing') return;
+    const role = getRole(room, socket.id);
+    if (role !== 'black' && role !== 'white') return;
+    if (room.game.history.length === 0) return socket.emit('move-error', '무를 수 있는 수가 없습니다');
+    room.undoRequest = role;
+    stopTimer(room);
+    io.to(u.roomId).emit('undo-requested', { requester: role, nick: u.nick });
+  });
+
+  socket.on('accept-undo', () => {
+    const u    = onlineUsers.get(socket.id);
+    const room = u?.roomId ? rooms.get(u.roomId) : null;
+    if (!room || !room.undoRequest) return;
+    const role = getRole(room, socket.id);
+    if (role === room.undoRequest) return;
+    const res = undoMove(room.game);
+    room.undoRequest = null;
+    if (!res.ok) return socket.emit('move-error', res.msg);
+    startTimer(room);
+    io.to(u.roomId).emit('undo-done', {
+      board: room.game.board,
+      currentPlayer: room.game.currentPlayer,
+      capturedBlack: room.game.capturedBlack,
+      capturedWhite: room.game.capturedWhite,
+      lastMove: room.game.lastMove,
+      moveCount: room.game.moveList.length,
+    });
+  });
+
+  socket.on('reject-undo', () => {
+    const u    = onlineUsers.get(socket.id);
+    const room = u?.roomId ? rooms.get(u.roomId) : null;
+    if (!room) return;
+    room.undoRequest = null;
+    startTimer(room);
+    io.to(u.roomId).emit('undo-rejected');
   });
 
   // ── 계가 합의 프로토콜 ────────────────────────────────
