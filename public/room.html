@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -331,6 +331,15 @@ body{
 @media (max-width:768px) {
   .score-strip{display:none}             /* JS로 .show 토글 */
 }
+/* ── 착점 확인 버튼 ─────────────────────────────────────── */
+#place-confirm{display:none;position:fixed;z-index:60;text-align:center;pointer-events:auto}
+.pcf-btn{display:block;background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.55);white-space:nowrap;min-height:40px}
+.pcf-btn:active{transform:scale(.94)}
+.pcf-arrow-d{width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:10px solid #1e8449;margin:0 auto}
+.pcf-arrow-u{width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:10px solid #1e8449;margin:0 auto}
+/* 대기 중 돌 */
+.stone.pending{opacity:.75;animation:pending-pulse .7s ease-in-out infinite alternate}
+@keyframes pending-pulse{from{opacity:.6}to{opacity:.95}}
 </style>
 </head>
 <body>
@@ -338,7 +347,7 @@ body{
 <!-- 헤더 -->
 <div class="hdr">
   <div class="title" id="room-title">대국방</div>
-  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v1.3</span>
+  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v1.5</span>
   <div class="role-badge spectator" id="role-badge">관전</div>
   <button class="hdr-btn" onclick="goLobby()">← 로비</button>
 </div>
@@ -512,6 +521,12 @@ body{
   </div>
 </div>
 
+<!-- 착점 확인 버튼 -->
+<div id="place-confirm">
+  <button class="pcf-btn" onclick="confirmPendingMove()">✔ 착점</button>
+  <div id="pcf-arrow" class="pcf-arrow-d"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -541,6 +556,7 @@ let replayStates = [];
 let replayStep = 0;
 let inReplay = false;
 let isMobile = () => window.innerWidth < 769;
+let pendingMove = null;
 
 if (!roomId) { alert('잘못된 접근'); location.href = '/'; }
 
@@ -568,6 +584,7 @@ socket.on('joined-room', ({ role, snap }) => {
 socket.on('room-update', snap => applySnap(snap));
 
 socket.on('stone-placed', d => {
+  pendingMove = null; document.getElementById('place-confirm').style.display='none';
   board = d.board;
   currentPlayer = d.currentPlayer;
   lastMove = d.lastMove;
@@ -587,6 +604,7 @@ socket.on('pass-done', d => {
 });
 
 socket.on('enter-marking', d => {
+  pendingMove=null; document.getElementById('place-confirm').style.display='none';
   phase = 'marking';
   board = d.board;
   myDeadStones = new Set(d.suggested || []);
@@ -805,7 +823,7 @@ socket.on('timer-tick', d => {
 });
 
 socket.on('time-out', d => toast(`⏱ ${d.loser==='black'?'흑':'백'} 시간 초과`));
-socket.on('move-error', msg => toast('⚠ ' + msg));
+socket.on('move-error', msg => { pendingMove=null; document.getElementById('place-confirm').style.display='none'; renderBoard(); toast('⚠ ' + msg); });
 socket.on('player-disconnected', d => toast(`⚠ ${d.nick} 연결 끊김`));
 socket.on('chat', msg => addChat(msg));
 socket.on('room-error', msg => { alert(msg); location.href='/'; });
@@ -928,11 +946,19 @@ function renderBoard() {
         cell.appendChild(s);
 
       } else if (phase==='playing' && canPlace()) {
-        const h = document.createElement('div');
-        h.className = `hover-stone ${currentPlayer}`;
-        h.style.width = h.style.height = ss + 'px';
-        cell.appendChild(h);
-        addTouchClick(cell, () => socket.emit('place-stone', { x, y }));
+        if (pendingMove && pendingMove.x===x && pendingMove.y===y) {
+          const s = document.createElement('div');
+          s.className = 'stone ' + currentPlayer + ' pending';
+          s.style.width = s.style.height = ss + 'px';
+          cell.appendChild(s);
+          addTouchClick(cell, () => cancelPendingMove());
+        } else {
+          const h = document.createElement('div');
+          h.className = 'hover-stone ' + currentPlayer;
+          h.style.width = h.style.height = ss + 'px';
+          cell.appendChild(h);
+          addTouchClick(cell, () => setPendingMove(x, y));
+        }
       }
 
       el.appendChild(cell);
@@ -952,6 +978,51 @@ function addTouchClick(el, fn) {
   el.addEventListener('click', () => {
     if (!touched) fn();
   });
+}
+
+// -- pending move --
+function setPendingMove(x, y) {
+  pendingMove = { x, y };
+  renderBoard();
+  positionConfirmBtn(x, y);
+}
+
+function cancelPendingMove() {
+  pendingMove = null;
+  document.getElementById('place-confirm').style.display = 'none';
+  renderBoard();
+}
+
+function confirmPendingMove() {
+  if (!pendingMove) return;
+  const { x, y } = pendingMove;
+  socket.emit('place-stone', { x, y });
+  pendingMove = null;
+  document.getElementById('place-confirm').style.display = 'none';
+  renderBoard();
+}
+
+function positionConfirmBtn(x, y) {
+  const wrap    = document.getElementById('place-confirm');
+  const arrow   = document.getElementById('pcf-arrow');
+  const boardEl = document.getElementById('board');
+  const rect    = boardEl.getBoundingClientRect();
+  const cx      = rect.left + (x + 0.5) * cellSize;
+  const cy      = rect.top  + (y + 0.5) * cellSize;
+  const nearTop = y < Math.floor(boardSize / 3);
+  wrap.style.left    = cx + 'px';
+  wrap.style.display = 'block';
+  if (nearTop) {
+    wrap.style.top       = (cy + cellSize * 0.6 + 4) + 'px';
+    wrap.style.transform = 'translate(-50%, 0)';
+    arrow.className      = 'pcf-arrow-u';
+    wrap.prepend(arrow);
+  } else {
+    wrap.style.top       = (cy - cellSize * 0.6 - 4) + 'px';
+    wrap.style.transform = 'translate(-50%, -100%)';
+    arrow.className      = 'pcf-arrow-d';
+    wrap.appendChild(arrow);
+  }
 }
 
 // ──────────────────────────────────────────────────────────
@@ -1329,7 +1400,7 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-window.addEventListener('resize', () => { calcCellSize(); renderBoard(); updateCtrlBar(); });
+window.addEventListener('resize', () => { calcCellSize(); renderBoard(); if(pendingMove) positionConfirmBtn(pendingMove.x, pendingMove.y); updateCtrlBar(); });
 </script>
 </body>
 </html>
