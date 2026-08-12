@@ -60,6 +60,12 @@ io.use((socket, next) => sessionMw(socket.request, {}, next));
 
 // ─── 페이지 라우트 (세션 뒤, static 앞) ─────────────────
 app.get('/ping', (_req, res) => res.send('v1.5-착점버튼-OK'));
+app.get('/roomver', (_req, res) => {
+  const p = path.join(__dirname, 'public', 'room.html');
+  const html = fs.readFileSync(p, 'utf8');
+  const m = html.match(/>(v[\d.\-a-z]+)</);
+  res.send(`room.html path: ${p} | version: ${m?.[1]||'not found'} | size: ${html.length}`);
+});
 app.get('/',         (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/index.html', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/room.html',  (_req, res) => res.sendFile(path.join(__dirname, 'public', 'room.html')));
