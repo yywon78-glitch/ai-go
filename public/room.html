@@ -340,10 +340,10 @@ body{
   transform:translate(-50%,-50%);
 }
 #pcf-btn{
-  width:60px;height:60px;border-radius:50%;
+  width:40px;height:40px;border-radius:50%;
   background:radial-gradient(circle at 32% 26%, #8effa8 0%, #2ecc71 38%, #1a8a45 80%, #0d5c2e 100%);
   border:2.5px solid rgba(255,255,255,.45);
-  color:#fff;font-size:28px;line-height:1;
+  color:#fff;font-size:20px;line-height:1;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;
   box-shadow:0 0 0 5px rgba(46,204,113,.22), 0 6px 24px rgba(0,0,0,.45);
@@ -371,7 +371,7 @@ body{
 <!-- 헤더 -->
 <div class="hdr">
   <div class="title" id="room-title">대국방</div>
-  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v2.2</span>
+  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v2.3</span>
   <div class="role-badge spectator" id="role-badge">관전</div>
   <button class="hdr-btn" onclick="goLobby()">← 로비</button>
 </div>
@@ -1053,8 +1053,10 @@ function positionConfirmBtn(x, y) {
   const rect    = boardEl.getBoundingClientRect();
   const cx      = rect.left + (x + 0.5) * cellSize;
   const cy      = rect.top  + (y + 0.5) * cellSize;
-  wrap.style.left    = cx + 'px';
-  wrap.style.top     = cy + 'px';
+  const r       = Math.floor(cellSize * 0.88 / 2); // 돌 반지름
+  // 돌 우상단 모서리에 배지처럼 걸침
+  wrap.style.left    = (cx + r * 0.65) + 'px';
+  wrap.style.top     = (cy - r * 0.65) + 'px';
   wrap.style.display = 'block';
 }
 
