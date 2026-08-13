@@ -308,7 +308,7 @@ body{
     padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;
   }
   .desktop-player .dp-stone{
-    width:40px;height:40px;border-radius:50%;
+  border-radius:50%;
   }
   .desktop-player .dp-stone.black{background:radial-gradient(circle at 34% 30%,#6f6f6f,#0a0a0a 72%)}
   .desktop-player .dp-stone.white{background:radial-gradient(circle at 34% 30%,#fff,#d0d0d0 78%);border:1px solid #999}
@@ -371,7 +371,7 @@ body{
 <!-- 헤더 -->
 <div class="hdr">
   <div class="title" id="room-title">대국방</div>
-  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v2.3</span>
+  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v2.4</span>
   <div class="role-badge spectator" id="role-badge">관전</div>
   <button class="hdr-btn" onclick="goLobby()">← 로비</button>
 </div>
@@ -1049,14 +1049,16 @@ function hidePendingOverlay() {
 
 function positionConfirmBtn(x, y) {
   const wrap    = document.getElementById('place-confirm');
+  const btn     = document.getElementById('pcf-btn');
   const boardEl = document.getElementById('board');
   const rect    = boardEl.getBoundingClientRect();
   const cx      = rect.left + (x + 0.5) * cellSize;
   const cy      = rect.top  + (y + 0.5) * cellSize;
-  const r       = Math.floor(cellSize * 0.88 / 2); // 돌 반지름
-  // 돌 우상단 모서리에 배지처럼 걸침
-  wrap.style.left    = (cx + r * 0.65) + 'px';
-  wrap.style.top     = (cy - r * 0.65) + 'px';
+  const ss      = Math.floor(cellSize * 0.88);
+  btn.style.width = btn.style.height = ss + 'px';
+  btn.style.fontSize = Math.max(12, Math.floor(ss * 0.45)) + 'px';
+  wrap.style.left    = cx + 'px';
+  wrap.style.top     = cy + 'px';
   wrap.style.display = 'block';
 }
 
