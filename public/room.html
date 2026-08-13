@@ -334,47 +334,36 @@ body{
 /* 착점 오버레이 + 카운트다운 */
 #pending-stone-ov{display:none;position:fixed;border-radius:50%;z-index:20;pointer-events:none;transform:translate(-50%,-50%);animation:pend-pulse .7s ease-in-out infinite alternate}
 @keyframes pend-pulse{from{opacity:.75}to{opacity:1}}
-/* ── 착점 확인 버튼 (세련된 디자인) ──────────────────────── */
+/* 착점 확인 — 원형 뱃지 */
 #place-confirm{
-  display:none;position:fixed;z-index:60;text-align:center;
-  pointer-events:auto;
-  filter:drop-shadow(0 8px 28px rgba(0,0,0,.5)) drop-shadow(0 2px 6px rgba(39,174,96,.35));
+  display:none;position:fixed;z-index:60;pointer-events:auto;
+  transform:translate(-50%,-50%);
 }
 #pcf-btn{
-  display:block;position:relative;overflow:hidden;
-  background:linear-gradient(150deg,#3de07c 0%,#27ae60 48%,#1a7a42 100%);
-  color:#fff;
-  border:1.5px solid rgba(255,255,255,.22);
-  border-radius:16px;
-  padding:11px 26px;
-  font-size:14px;font-weight:800;font-family:inherit;
-  cursor:pointer;letter-spacing:.6px;
-  text-shadow:0 1px 4px rgba(0,0,0,.3);
-  min-height:44px;white-space:nowrap;
-  transition:transform .12s;
+  width:60px;height:60px;border-radius:50%;
+  background:radial-gradient(circle at 32% 26%, #8effa8 0%, #2ecc71 38%, #1a8a45 80%, #0d5c2e 100%);
+  border:2.5px solid rgba(255,255,255,.45);
+  color:#fff;font-size:28px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 0 0 5px rgba(46,204,113,.22), 0 6px 24px rgba(0,0,0,.45);
+  animation:pcf-glow 2.4s ease-in-out infinite;
+  position:relative;overflow:hidden;
+  transition:transform .12s,box-shadow .12s;
+  font-family:inherit;border-style:solid;
 }
 #pcf-btn::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:46%;
-  background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,transparent 100%);
-  border-radius:14px 14px 0 0;pointer-events:none;
+  content:'';position:absolute;
+  top:10%;left:16%;width:34%;height:26%;
+  background:radial-gradient(ellipse, rgba(255,255,255,.7), transparent 70%);
+  border-radius:50%;pointer-events:none;
 }
-#pcf-btn::after{
-  content:'';position:absolute;inset:0;border-radius:15px;
-  background:rgba(255,255,255,.24);
-  transform:scaleX(0);transform-origin:right center;
+@keyframes pcf-glow{
+  0%,100%{box-shadow:0 0 0 5px rgba(46,204,113,.22),0 6px 24px rgba(0,0,0,.45)}
+  50%    {box-shadow:0 0 0 10px rgba(46,204,113,.10),0 6px 32px rgba(0,0,0,.5),0 0 22px rgba(46,204,113,.4)}
 }
-#pcf-btn.counting::after{animation:pcf-drain 3s linear forwards}
-@keyframes pcf-drain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-#pcf-btn:active{transform:scale(.94)}
-#pcf-arrow{
-  width:22px;height:11px;margin:0 auto;
-  background:linear-gradient(160deg,#2ecc71,#1a7a42);
-  clip-path:polygon(0 0,100% 0,50% 100%);
-}
-#pcf-arrow.up{
-  background:linear-gradient(340deg,#2ecc71,#1a7a42);
-  clip-path:polygon(50% 0,100% 100%,0 100%);
-}
+#pcf-btn:active{transform:scale(.86);box-shadow:0 0 0 3px rgba(46,204,113,.35),0 3px 12px rgba(0,0,0,.5)}
+#pcf-arrow{display:none}
 </style>
 </head>
 <body>
@@ -382,7 +371,7 @@ body{
 <!-- 헤더 -->
 <div class="hdr">
   <div class="title" id="room-title">대국방</div>
-  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v2.0</span>
+  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v2.1</span>
   <div class="role-badge spectator" id="role-badge">관전</div>
   <button class="hdr-btn" onclick="goLobby()">← 로비</button>
 </div>
@@ -556,7 +545,7 @@ body{
 
 <div id="pending-stone-ov"></div>
 <div id="place-confirm" style="display:none;position:fixed;z-index:60;text-align:center">
-  <button id="pcf-btn" onclick="confirmPendingMove()">&#10004; &#xCC29;&#xC810;</button>
+  <button id="pcf-btn" onclick="confirmPendingMove()">&#10004;</button>
   <div id="pcf-arrow" class="pcf-arrow-d"></div>
 </div>
 <div id="undo-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:900;align-items:center;justify-content:center">
@@ -1023,9 +1012,7 @@ function setPendingMove(x, y) {
   pendingMove = { x, y };
   showPendingOverlay(x, y);
   positionConfirmBtn(x, y);
-  pendingTimer = setTimeout(confirmPendingMove, 3000);
   const btn = document.getElementById('pcf-btn');
-  if (btn) { btn.classList.remove('counting'); void btn.offsetWidth; btn.classList.add('counting'); }
 }
 
 function cancelPendingMove() {
@@ -1061,26 +1048,17 @@ function hidePendingOverlay() {
 }
 
 function positionConfirmBtn(x, y) {
-  const wrap  = document.getElementById('place-confirm');
-  const arrow = document.getElementById('pcf-arrow');
+  const wrap    = document.getElementById('place-confirm');
   const boardEl = document.getElementById('board');
-  const rect  = boardEl.getBoundingClientRect();
-  const cx = rect.left + (x + 0.5) * cellSize;
-  const cy = rect.top  + (y + 0.5) * cellSize;
+  const rect    = boardEl.getBoundingClientRect();
+  const cx      = rect.left + (x + 0.5) * cellSize;
+  const cy      = rect.top  + (y + 0.5) * cellSize;
+  const ss      = Math.floor(cellSize * 0.88);
   const nearTop = y < Math.floor(boardSize / 3);
-  wrap.style.left = cx + 'px';
+  const offset  = Math.floor(ss / 2) + 36;
+  wrap.style.left    = cx + 'px';
+  wrap.style.top     = nearTop ? (cy + offset) + 'px' : (cy - offset) + 'px';
   wrap.style.display = 'block';
-  if (nearTop) {
-    wrap.style.top = (cy + cellSize * 0.6 + 4) + 'px';
-    wrap.style.transform = 'translate(-50%, 0)';
-    arrow.className = 'pcf-arrow-u';
-    wrap.prepend(arrow);
-  } else {
-    wrap.style.top = (cy - cellSize * 0.6 - 4) + 'px';
-    wrap.style.transform = 'translate(-50%, -100%)';
-    arrow.className = 'pcf-arrow-d';
-    wrap.appendChild(arrow);
-  }
 }
 
 // ──────────────────────────────────────────────────────────

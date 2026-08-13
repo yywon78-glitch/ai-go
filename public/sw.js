@@ -1,7 +1,7 @@
 ﻿/* 스마트 대국 — 서비스워커
    실시간 멀티플레이이므로 HTML은 항상 network-first.
    Socket.IO 요청은 서비스워커를 통과시키지 않는다. */
-const CACHE = 'smart-daeguk-v12';
+const CACHE = 'smart-daeguk-v13';
 const ASSETS = ['/', '/login.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
