@@ -371,7 +371,7 @@ body{
 <!-- 헤더 -->
 <div class="hdr">
   <div class="title" id="room-title">대국방</div>
-  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v2.1</span>
+  <span style="font-size:10px;color:#5a6a7a;flex-shrink:0">v2.2</span>
   <div class="role-badge spectator" id="role-badge">관전</div>
   <button class="hdr-btn" onclick="goLobby()">← 로비</button>
 </div>
@@ -1053,11 +1053,8 @@ function positionConfirmBtn(x, y) {
   const rect    = boardEl.getBoundingClientRect();
   const cx      = rect.left + (x + 0.5) * cellSize;
   const cy      = rect.top  + (y + 0.5) * cellSize;
-  const ss      = Math.floor(cellSize * 0.88);
-  const nearTop = y < Math.floor(boardSize / 3);
-  const offset  = Math.floor(ss / 2) + 36;
   wrap.style.left    = cx + 'px';
-  wrap.style.top     = nearTop ? (cy + offset) + 'px' : (cy - offset) + 'px';
+  wrap.style.top     = cy + 'px';
   wrap.style.display = 'block';
 }
 
