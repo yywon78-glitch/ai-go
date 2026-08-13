@@ -363,7 +363,7 @@ body{
   background:rgba(255,255,255,.24);
   transform:scaleX(0);transform-origin:right center;
 }
-#pcf-btn.counting::after{animation:pcf-drain 1.5s linear forwards}
+#pcf-btn.counting::after{animation:pcf-drain 3s linear forwards}
 @keyframes pcf-drain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 #pcf-btn:active{transform:scale(.94)}
 #pcf-arrow{
@@ -1023,7 +1023,7 @@ function setPendingMove(x, y) {
   pendingMove = { x, y };
   showPendingOverlay(x, y);
   positionConfirmBtn(x, y);
-  pendingTimer = setTimeout(confirmPendingMove, 1500);
+  pendingTimer = setTimeout(confirmPendingMove, 3000);
   const btn = document.getElementById('pcf-btn');
   if (btn) { btn.classList.remove('counting'); void btn.offsetWidth; btn.classList.add('counting'); }
 }
