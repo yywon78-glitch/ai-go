@@ -412,9 +412,23 @@ io.on('connection', (socket) => {
     const u    = onlineUsers.get(socket.id);
     const room = u?.roomId ? rooms.get(u.roomId) : null;
     if (!room) return;
+    const role = getRole(room, socket.id);
     room.undoRequest = null;
     startTimer(room);
-    io.to(u.roomId).emit('undo-rejected');
+    io.to(u.roomId).emit('undo-rejected', { rejecter: role });
+  });
+
+  // ── 나가기 (기권 아님, 의도적 퇴장) ─────────────────────
+  socket.on('leave-room', () => {
+    const u    = onlineUsers.get(socket.id);
+    const room = u?.roomId ? rooms.get(u.roomId) : null;
+    if (!room) return;
+    const role = getRole(room, socket.id);
+    if (role !== 'black' && role !== 'white') return;
+    // 무르기 대기 중이면 취소
+    if (room.undoRequest) { room.undoRequest = null; startTimer(room); }
+    u.intentionalLeave = true;
+    io.to(u.roomId).emit('opponent-left', { nick: u.nick, role });
   });
 
   // ── 계가 합의 프로토콜 ────────────────────────────────
@@ -606,7 +620,12 @@ io.on('connection', (socket) => {
       if (room) {
         const role = getRole(room, socket.id);
         if (role === 'black' || role === 'white') {
-          io.to(u.roomId).emit('player-disconnected', { nick: u.nick, role });
+          // 무르기 대기 중이면 취소
+          if (room.undoRequest === role) { room.undoRequest = null; }
+          // 의도적 나가기(leave-room)는 이미 알림 보냄 → 연결끊김 toast 생략
+          if (!u.intentionalLeave) {
+            io.to(u.roomId).emit('player-disconnected', { nick: u.nick, role });
+          }
           if (role === 'black') room.players.black = null;
           else                  room.players.white = null;
 
